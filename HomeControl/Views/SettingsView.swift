@@ -12,6 +12,21 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 Section {
+                    Picker("Home", selection: Binding(get: { store.currentHomeID },
+                                                      set: { if let id = $0 { store.selectHome(id) } })) {
+                        ForEach(store.homes) { home in
+                            Label(home.name, systemImage: home == .demo ? "sparkles" : "house")
+                                .tag(Optional(home.id))
+                        }
+                    }
+                    .pickerStyle(.inline)
+                    .labelsHidden()
+                } header: {
+                    Text("Home")
+                } footer: {
+                    Text("The Demo Home lets you try every control without connecting to Apple Home.")
+                }
+                Section {
                     LabeledContent("Status", value: accessText)
                     switch store.access {
                     case .notRequested:

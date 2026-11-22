@@ -11,19 +11,24 @@ struct DeviceDetailView: View {
         NavigationStack {
             Form {
                 Section {
-                    HStack(alignment: .top, spacing: 14) {
+                    VStack(spacing: 6) {
                         Image(systemName: current.icon)
-                            .font(.largeTitle)
+                            .font(.system(size: 40))
                             .foregroundStyle(current.isActive ? current.kind.tint : .secondary)
-                            .frame(width: 48)
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(current.name).font(.title2.bold())
-                            if current.accessoryName != current.name {
-                                Text(current.accessoryName).foregroundStyle(.secondary)
-                            }
-                            Text("\(current.room) · \(current.status)").foregroundStyle(.secondary)
+                            .contentTransition(.symbolEffect(.replace))
+                            .frame(height: 52)
+                        Text(current.name).font(.title2.bold())
+                        if current.accessoryName != current.name {
+                            Text(current.accessoryName).foregroundStyle(.secondary)
                         }
+                        Text("\(current.room) · \(current.status)")
+                            .foregroundStyle(.secondary)
+                            .contentTransition(.interpolate)
                     }
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .animation(.smooth, value: current.status)
                 }
                 if current.isReachable {
                     Section("Control") { DeviceControls(device: binding) }
@@ -61,14 +66,9 @@ struct DeviceControls: View {
         case .lock:
             Toggle("Locked", isOn: $device.isOn)
         case .garage:
-            HStack {
-                Button("Open", systemImage: "door.garage.open") { device.isOn = false }
-                    .disabled(!device.isOn)
-                Spacer()
-                Button("Close", systemImage: "door.garage.closed") { device.isOn = true }
-                    .disabled(device.isOn)
-            }
-            .buttonStyle(.bordered)
+            GarageControl(device: $device)
+                .frame(maxWidth: .infinity)
+                .listRowBackground(Color.clear)
         case .blinds:
             LevelControl(level: $device.value, look: .shutter, tint: device.kind.tint, icon: device.icon) {
                 device.value = device.value > 0 ? 0 : 1

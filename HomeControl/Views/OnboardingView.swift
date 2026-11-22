@@ -85,11 +85,13 @@ struct OnboardingView: View {
                 case .notRequested, .pending:
                     primaryButton("Allow Home Access") { store.requestAccess() }
                         .disabled(store.access == .pending)
+                    secondaryButton("Explore the Demo Home") { store.selectHome(HomeOption.demo.id); finish() }
                     secondaryButton("Not Now") { finish() }
                 case .authorized:
                     primaryButton("Get Started") { finish() }
                 case .denied:
                     primaryButton("Open Settings") { openURL(.homeAccessSettings) }
+                    secondaryButton("Explore the Demo Home") { store.selectHome(HomeOption.demo.id); finish() }
                     secondaryButton("Continue Anyway") { finish() }
                 }
             }

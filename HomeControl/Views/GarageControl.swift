@@ -24,7 +24,7 @@ struct GarageControl: View {
                 .accessibilityLabel("Garage door")
                 .accessibilityValue(device.status)
                 .accessibilityAddTraits(.isButton)
-                .accessibilityAction(perform: toggle)
+                .accessibilityAction { toggle() }
 
             Button(action: toggle) {
                 Label(device.isOn ? "Open" : "Close",

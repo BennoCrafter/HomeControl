@@ -30,7 +30,7 @@ struct DeviceDetailView: View {
                     .padding(.vertical, 8)
                     .animation(.smooth, value: current.status)
                 }
-                if current.isReachable {
+                if current.isReachable && current.kind.isControllable {
                     Section("Control") { DeviceControls(device: binding) }
                 }
             }
@@ -69,6 +69,8 @@ struct DeviceControls: View {
             GarageControl(device: $device)
                 .frame(maxWidth: .infinity)
                 .listRowBackground(Color.clear)
+        case .contact:
+            EmptyView()
         case .blinds:
             LevelControl(level: $device.value, look: .shutter, tint: device.kind.tint, icon: device.icon) {
                 device.value = device.value > 0 ? 0 : 1

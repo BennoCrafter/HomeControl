@@ -27,7 +27,7 @@ struct DeviceTile: View {
                     .frame(width: 48, height: 48)
             }
             .buttonStyle(.plain)
-            .disabled(!current.isReachable)
+            .disabled(!current.isReachable || !current.kind.isControllable)
             .accessibilityLabel("Toggle \(current.name)")
             Spacer(minLength: 4)
             if showRoom {

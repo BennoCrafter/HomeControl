@@ -9,6 +9,7 @@ extension DeviceKind {
         case HMServiceTypeGarageDoorOpener: self = .garage
         case HMServiceTypeOutlet, HMServiceTypeSwitch: self = .plug
         case HMServiceTypeWindowCovering: self = .blinds
+        case HMServiceTypeContactSensor: self = .contact
         default: return nil
         }
     }
@@ -20,7 +21,7 @@ extension DeviceKind {
         case .thermostat: HMCharacteristicTypeTargetHeatingCooling
         case .lock: HMCharacteristicTypeTargetLockMechanismState
         case .garage: HMCharacteristicTypeTargetDoorState
-        case .blinds: nil
+        case .blinds, .contact: nil
         }
     }
 
@@ -30,7 +31,7 @@ extension DeviceKind {
         case .light: HMCharacteristicTypeBrightness
         case .thermostat: HMCharacteristicTypeTargetTemperature
         case .blinds: HMCharacteristicTypeTargetPosition
-        case .lock, .garage, .plug: nil
+        case .lock, .garage, .plug, .contact: nil
         }
     }
 
@@ -39,6 +40,7 @@ extension DeviceKind {
         switch self {
         case .lock: HMCharacteristicTypeCurrentLockMechanismState
         case .garage: HMCharacteristicTypeCurrentDoorState
+        case .contact: HMCharacteristicTypeContactState
         default: nil
         }
     }

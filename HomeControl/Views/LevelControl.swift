@@ -24,8 +24,15 @@ struct LevelControl: View {
     @State private var dragStart: Double?
     @State private var lastSent = Date.distantPast
     @State private var lastAngle: Double?
+    @State private var jumps = 0
+    /// The level as drawn. Animated locally so taps spring immediately, independent of HomeKit round-trips.
+    @State private var displayed: Double?
+    @State private var lastLocalChange = Date.distantPast
+    @State private var springTask: Task<Void, Never>?
 
-    private var shown: Double { draft ?? level }
+    private static let spring = Spring(duration: 0.55, bounce: 0.35)
+
+    private var shown: Double { draft ?? displayed ?? level }
 
     private var label: String {
         switch look {
@@ -41,6 +48,12 @@ struct LevelControl: View {
             case .dial: dial
             }
         }
+        .onChange(of: level) { _, new in
+            // Ignore echoes of our own writes (HomeKit refreshes can briefly report older values).
+            guard draft == nil, Date.now.timeIntervalSince(lastLocalChange) > 1.2 else { return }
+            animate(to: new)
+        }
+        .sensoryFeedback(.impact(weight: .light), trigger: jumps)
         .sensoryFeedback(trigger: draft.map { Int(($0 * 10).rounded()) }) { _, step in
             guard let step else { return nil }
             return step == 0 || step == 10 ? .impact(weight: .heavy) : .selection
@@ -60,7 +73,9 @@ struct LevelControl: View {
 
     private func drag(to value: Double) {
         let value = min(max(value, 0), 1)
+        springTask?.cancel()
         draft = value
+        lastLocalChange = .now
         // shortcut: fixed 0.1 s throttle, slow accessories may lag behind; the final value is always sent on release
         if Date.now.timeIntervalSince(lastSent) > 0.1 {
             lastSent = .now
@@ -68,8 +83,38 @@ struct LevelControl: View {
         }
     }
 
+    /// Tap on a spot: springs straight to that level.
+    private func jump(to value: Double) {
+        let value = min(max(value, 0), 1)
+        lastLocalChange = .now
+        animate(to: value)
+        level = value
+        jumps += 1
+    }
+
+    /// Steps the spring frame by frame, so the bounce shows no matter which transaction the update arrives in.
+    private func animate(to target: Double) {
+        let start = shown
+        springTask?.cancel()
+        springTask = Task {
+            let clock = ContinuousClock(), began = clock.now
+            while !Task.isCancelled {
+                let time = (clock.now - began) / .seconds(1)
+                guard time < Self.spring.settlingDuration else { break }
+                displayed = start + (target - start) * Self.spring.value(target: 1.0, time: time)
+                try? await Task.sleep(for: .milliseconds(8))
+            }
+            if !Task.isCancelled { displayed = target }
+        }
+    }
+
     private func endDrag() {
-        if let draft { level = draft }
+        springTask?.cancel()
+        if let draft {
+            level = draft
+            displayed = draft
+            lastLocalChange = .now
+        }
         draft = nil
         dragStart = nil
         lastAngle = nil
@@ -97,19 +142,22 @@ struct LevelControl: View {
                 Rectangle().fill(.quaternary)
                 switch look {
                 case .light:
-                    Rectangle().fill(tint.gradient).frame(height: height * shown)
+                    // max(0, …): the spring overshoots past the ends; negative heights would break the animation.
+                    Rectangle().fill(tint.gradient).frame(height: max(0, height * shown))
                 case .shutter:
                     Rectangle().fill(tint.opacity(0.2))
                     ShutterSlats()
                         .fill(tint.gradient)
-                        .frame(height: height * (1 - shown))
+                        .frame(height: max(0, height * (1 - shown)))
                         .frame(maxHeight: .infinity, alignment: .top)
                 }
-                badge.frame(maxHeight: .infinity)
+                Button(action: onTap) { badge }
+                    .buttonStyle(.plain)
+                    .frame(maxHeight: .infinity)
             }
             .clipShape(.rect(cornerRadius: 40))
             .contentShape(.rect(cornerRadius: 40))
-            .onTapGesture(perform: onTap)
+            .gesture(SpatialTapGesture().onEnded { tap in jump(to: 1 - tap.location.y / height) })
             .highPriorityGesture(
                 DragGesture(minimumDistance: 4)
                     .onChanged { gesture in
@@ -119,12 +167,19 @@ struct LevelControl: View {
                     }
                     .onEnded { _ in endDrag() }
             )
-            .animation(.interactiveSpring, value: shown)
         }
         .frame(width: 130, height: 300)
     }
 
     // MARK: Dial
+
+    /// 270° arc with the gap at the bottom, filled clockwise up to `fraction`.
+    /// Trim clamps to 0...1, so spring overshoot past either end animates cleanly in both directions.
+    private func dialArc(_ fraction: Double) -> some Shape {
+        Circle()
+            .trim(from: 0, to: 0.75 * min(max(fraction, 0), 1))
+            .rotation(.degrees(135))
+    }
 
     private var dial: some View {
         let size: CGFloat = 260
@@ -132,24 +187,30 @@ struct LevelControl: View {
         let radius = (size - lineWidth) / 2
         let angle = Angle.degrees(-135 + 270 * shown).radians // 0 = 12 o'clock, clockwise
         return ZStack {
-            DialArc(fraction: 1).stroke(.quaternary, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
-            DialArc(fraction: shown).stroke(tint.gradient, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+            dialArc(1).stroke(.quaternary, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+            dialArc(shown).stroke(tint.gradient, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
             Circle()
                 .fill(.white)
                 .shadow(radius: 3)
                 .frame(width: lineWidth - 4, height: lineWidth - 4)
-                .offset(x: radius * sin(angle), y: -radius * cos(angle))
+                .offset(y: -radius)
+                .rotationEffect(.radians(angle)) // rotating (not offsetting) keeps the knob on the arc while animating
             Button(action: onTap) { badge }
                 .buttonStyle(.plain)
         }
         .padding(lineWidth / 2)
         .frame(width: size, height: size)
         .contentShape(.circle)
-        .gesture(
-            DragGesture(minimumDistance: 0)
+        .gesture(SpatialTapGesture().onEnded { tap in
+            let dx = tap.location.x - size / 2, dy = tap.location.y - size / 2
+            guard hypot(dx, dy) > radius * 0.4 else { return } // the centre is the toggle button
+            jump(to: (atan2(dx, -dy) * 180 / .pi + 135) / 270)
+        })
+        .highPriorityGesture(
+            DragGesture(minimumDistance: 4)
                 .onChanged { gesture in
                     let dx = gesture.location.x - size / 2, dy = gesture.location.y - size / 2
-                    guard hypot(dx, dy) > radius * 0.4 else { return } // the centre is the tap target
+                    guard hypot(dx, dy) > radius * 0.4 else { return }
                     // Relative turning: follow how far the finger rotates, wherever it starts, so the knob never jumps or gets stuck.
                     let angle = atan2(dx, -dy) * 180 / .pi
                     if let lastAngle {
@@ -161,24 +222,6 @@ struct LevelControl: View {
                 }
                 .onEnded { _ in endDrag() }
         )
-        .animation(.interactiveSpring, value: shown)
-    }
-}
-
-/// 270° arc with the gap at the bottom, filled clockwise up to `fraction`.
-nonisolated private struct DialArc: Shape {
-    var fraction: Double
-
-    var animatableData: Double {
-        get { fraction }
-        set { fraction = newValue }
-    }
-
-    func path(in rect: CGRect) -> Path {
-        Path { path in
-            path.addArc(center: CGPoint(x: rect.midX, y: rect.midY), radius: min(rect.width, rect.height) / 2,
-                        startAngle: .degrees(135), endAngle: .degrees(135 + 270 * fraction), clockwise: false)
-        }
     }
 }
 

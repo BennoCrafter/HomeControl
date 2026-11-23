@@ -34,10 +34,14 @@ struct LevelControl: View {
 
     private var shown: Double { draft ?? displayed ?? level }
 
+    /// What the label reads: the target, never the spring's in-between or overshoot values.
+    private var labelValue: Double { draft ?? level }
+
     private var label: String {
+        let value = labelValue
         switch look {
-        case .light: shown == 0 ? "Off" : shown.formatted(.percent.precision(.fractionLength(0)))
-        case .shutter: shown == 0 ? "Closed" : "\(shown.formatted(.percent.precision(.fractionLength(0)))) open"
+        case .light: return value == 0 ? "Off" : value.formatted(.percent.precision(.fractionLength(0)))
+        case .shutter: return value == 0 ? "Closed" : "\(value.formatted(.percent.precision(.fractionLength(0)))) open"
         }
     }
 
@@ -53,7 +57,7 @@ struct LevelControl: View {
             guard draft == nil, Date.now.timeIntervalSince(lastLocalChange) > 1.2 else { return }
             animate(to: new)
         }
-        .sensoryFeedback(.impact(weight: .light), trigger: jumps)
+        .sensoryFeedback(.impact(weight: .medium), trigger: jumps)
         .sensoryFeedback(trigger: draft.map { Int(($0 * 10).rounded()) }) { _, step in
             guard let step else { return nil }
             return step == 0 || step == 10 ? .impact(weight: .heavy) : .selection
@@ -109,8 +113,9 @@ struct LevelControl: View {
     }
 
     private func endDrag() {
-        springTask?.cancel()
+        // A dial touch that never moved sets no draft; it must not freeze a running spring mid-bounce.
         if let draft {
+            springTask?.cancel()
             level = draft
             displayed = draft
             lastLocalChange = .now
@@ -126,7 +131,7 @@ struct LevelControl: View {
             Text(label)
                 .font(.headline)
                 .monospacedDigit()
-                .contentTransition(.numericText(value: shown))
+                .contentTransition(.numericText(value: labelValue))
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
@@ -193,6 +198,13 @@ struct LevelControl: View {
                 .fill(.white)
                 .shadow(radius: 3)
                 .frame(width: lineWidth - 4, height: lineWidth - 4)
+                // Knob grows while held and pops on a tap, before the offset so it scales in place.
+                .scaleEffect(draft != nil ? 1.25 : 1)
+                .animation(.spring(duration: 0.3, bounce: 0.5), value: draft != nil)
+                .keyframeAnimator(initialValue: 1.0, trigger: jumps) { $0.scaleEffect($1) } keyframes: { _ in
+                    SpringKeyframe(1.4, duration: 0.1)
+                    SpringKeyframe(1, duration: 0.45, spring: .bouncy)
+                }
                 .offset(y: -radius)
                 .rotationEffect(.radians(angle)) // rotating (not offsetting) keeps the knob on the arc while animating
             Button(action: onTap) { badge }

@@ -5,6 +5,8 @@ struct DeviceDetailView: View {
     @Environment(HomeStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     let device: Device
+    /// Pushed onto the dashboard's navigation instead of shown as a sheet.
+    var isPushed = false
     @Environment(\.itemPrefs) private var prefs
     @State private var renaming = false
     @State private var newName = ""
@@ -15,17 +17,21 @@ struct DeviceDetailView: View {
 
     var body: some View {
         if let group = store.group(for: device.id) {
-            GroupDetailView(group: group)
+            GroupDetailView(group: group, isPushed: isPushed)
+        } else if isPushed {
+            details.background(HomeBackground())
         } else {
-            details
+            NavigationStack { details }
+                // Below full height the sheet stays glass and the home shows through; full height turns it opaque.
+                .presentationDetents([.fraction(0.72), .large])
+                .presentationSizing(.page) // the default form sheet on Mac/iPad is too short for the dial
         }
     }
 
     private var details: some View {
         let binding = store.binding(for: device)
         let current = binding.wrappedValue
-        return NavigationStack {
-            ScrollView {
+        return ScrollView {
                 VStack(spacing: 24) {
                     if !current.isReachable {
                         ContentUnavailableView("No Response", systemImage: "exclamationmark.triangle",
@@ -50,9 +56,11 @@ struct DeviceDetailView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) { header(current) }
-                ToolbarItem(placement: .topBarLeading) { editMenu(current) }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done", systemImage: "xmark") { dismiss() }
+                ToolbarItem(placement: isPushed ? .topBarTrailing : .topBarLeading) { editMenu(current) }
+                if !isPushed {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done", systemImage: "xmark") { dismiss() }
+                    }
                 }
             }
             .alert("Rename", isPresented: $renaming) {
@@ -73,10 +81,6 @@ struct DeviceDetailView: View {
             .sheet(isPresented: $grouping) {
                 GroupEditor(kind: .group, preselected: [current.id]).environment(store)
             }
-        }
-        // Below full height the sheet stays glass and the home shows through; full height turns it opaque.
-        .presentationDetents([.fraction(0.72), .large])
-        .presentationSizing(.page) // the default form sheet on Mac/iPad is too short for the dial
     }
 
     /// Icon, name, and room with state, in one line's height.

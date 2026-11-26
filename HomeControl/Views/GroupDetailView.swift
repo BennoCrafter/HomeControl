@@ -3,17 +3,27 @@ import SwiftUI
 /// Every member of a group, each with its own control. Members that work a player (Play, Pause, Mute…) become a remote.
 struct GroupDetailView: View {
     let group: DeviceGroup
+    var isPushed = false
     @Environment(HomeStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     @State private var editing = false
 
     var body: some View {
+        if isPushed {
+            content.background(HomeBackground())
+        } else {
+            NavigationStack { content }
+                .presentationDetents([.fraction(0.72), .large])
+                .presentationSizing(.page)
+        }
+    }
+
+    private var content: some View {
         let members = store.members(of: group)
         let remote = MediaButton.remote(for: members)
         let others = members.filter { member in !remote.contains { $0.device.id == member.id } }
         let device = store.groupDevices.first { $0.id == group.deviceID }
-        NavigationStack {
-            Form {
+        return Form {
                 if !remote.isEmpty {
                     Section { RemoteView(buttons: remote) }
                         .listRowBackground(Color.clear)
@@ -38,16 +48,15 @@ struct GroupDetailView: View {
                             .contentTransition(.numericText())
                     }
                 }
-                ToolbarItem(placement: .cancellationAction) { Button("Edit") { editing = true } }
-                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+                ToolbarItem(placement: isPushed ? .topBarTrailing : .cancellationAction) { Button("Edit") { editing = true } }
+                if !isPushed {
+                    ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+                }
             }
             .sheet(isPresented: $editing) {
                 GroupEditor(kind: .group, existing: group).environment(store)
             }
             .onChange(of: store.group(id: group.id) == nil) { _, gone in if gone { dismiss() } }
-        }
-        .presentationDetents([.fraction(0.72), .large])
-        .presentationSizing(.page)
     }
 }
 

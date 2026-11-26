@@ -141,25 +141,18 @@ struct DashboardView: View {
             .background(HomeBackground())
             .navigationTitle(folder?.name ?? store.homeName)
             .navigationBarTitleDisplayMode(.inline)
-            .sheet(item: $selected) { DeviceDetailView(device: $0).environment(store) }
-            .sheet(item: Binding(get: { openedRoom.map(IdentifiedString.init) }, set: { openedRoom = $0?.id })) { room in
-                NavigationStack {
-                    RoomView(title: room.id, devices: store.items(in: room.id), showRoom: false)
-                        .toolbar { Button("Done") { openedRoom = nil } }
-                }
-                .environment(store)
+            // Pushed, not sheets: the dashboard is the start of a path into the home.
+            .navigationDestination(item: $selected) { DeviceDetailView(device: $0, isPushed: true) }
+            .navigationDestination(item: Binding(get: { openedRoom.map(IdentifiedString.init) }, set: { openedRoom = $0?.id })) { room in
+                RoomView(title: room.id, devices: store.items(in: room.id), showRoom: false)
             }
             .fullScreenCover(item: $openedFolder) { folder in
                 DashboardView(folder: folder)
                     .environment(store)
                     .navigationTransition(.zoom(sourceID: folder.id, in: zoom))
             }
-            .sheet(item: $openedCollection) { collection in
-                NavigationStack {
-                    RoomView(title: collection.name, devices: items(of: collection), showRoom: true)
-                        .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { openedCollection = nil } } }
-                }
-                .environment(store)
+            .navigationDestination(item: $openedCollection) { collection in
+                RoomView(title: collection.name, devices: items(of: collection), showRoom: true)
             }
             .sheet(item: $editingCollection) { GroupEditor(kind: .collection, existing: $0).environment(store) }
             .sheet(isPresented: $addingCollection) {

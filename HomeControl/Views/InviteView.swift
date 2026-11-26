@@ -57,12 +57,8 @@ struct InviteView: View {
                     step(2, title: "Give HomeKit access",
                          text: "So they can switch the accessories too. Apple's Home screen for people opens.") {
                         Button {
-                            // Apple's screen shows on its own; over this sheet it would sit behind our buttons.
                             dismiss()
-                            Task {
-                                try? await Task.sleep(for: .milliseconds(500))
-                                store.manageMembers()
-                            }
+                            store.requestMemberManagement()
                         } label: {
                             Label("Open Home Access", systemImage: "homekit")
                                 .frame(maxWidth: .infinity)

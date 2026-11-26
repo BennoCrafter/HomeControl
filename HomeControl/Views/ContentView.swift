@@ -94,6 +94,17 @@ struct ContentView: View {
         .onOpenURL(perform: open)
         .onChange(of: homes) { store.homesChanged() }
         .onChange(of: scenePhase) { _, phase in if phase == .active { store.readAll() } }
+        .onChange(of: store.wantsMemberManagement) { _, wanted in
+            guard wanted else { return }
+            // Every sheet of ours closed first; Apple's screen then presents cleanly on its own.
+            showingSettings = false
+            linkedItem = nil
+            Task {
+                try? await Task.sleep(for: .milliseconds(700))
+                store.wantsMemberManagement = false
+                store.manageMembers()
+            }
+        }
         .sheet(item: $linkedItem) { DeviceDetailView(device: $0).environment(store) }
         .sheet(isPresented: $showingSettings) {
             SettingsView()

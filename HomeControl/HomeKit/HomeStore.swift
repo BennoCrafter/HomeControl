@@ -480,7 +480,10 @@ extension HomeStore {
 
     /// Apple's own screen for inviting people to the home and setting what they may do.
     func manageMembers() {
-        guard let home else { return }
+        guard let home else {
+            logger.error("Managing members: no HomeKit home \(self.homeKitID ?? "nil")")
+            return
+        }
         home.manageUsers { error in
             if let error { logger.error("Managing members failed: \(error)") }
         }

@@ -72,11 +72,20 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 
 /// Someone tapped a family member's invitation: join their home's setup.
 final class SceneDelegate: NSObject, UIWindowSceneDelegate {
+    private weak var windowScene: UIWindowScene?
+
+    /// SwiftUI's window. System screens, like HomeKit's for people, look for it here to present on.
+    var window: UIWindow? {
+        get { windowScene?.keyWindow ?? windowScene?.windows.first }
+        set {} // SwiftUI owns the window
+    }
+
     func windowScene(_: UIWindowScene, userDidAcceptCloudKitShareWith metadata: CKShare.Metadata) {
         accept(metadata)
     }
 
-    func scene(_: UIScene, willConnectTo _: UISceneSession, options: UIScene.ConnectionOptions) {
+    func scene(_ scene: UIScene, willConnectTo _: UISceneSession, options: UIScene.ConnectionOptions) {
+        windowScene = scene as? UIWindowScene
         if let metadata = options.cloudKitShareMetadata { accept(metadata) }
     }
 

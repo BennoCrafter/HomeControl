@@ -13,6 +13,7 @@ struct DashboardView: View {
     @Environment(\.roomIcons) private var roomIcons
     @Namespace private var zoom
     @State private var openedFolder: DeviceGroup?
+    @State private var inviting = false
     @State private var openedCollection: DeviceGroup?
     @State private var editingCollection: DeviceGroup?
     @State private var addingCollection = false
@@ -133,6 +134,7 @@ struct DashboardView: View {
                     let defaults = UserDefaults.standard
                     selected = (store.devices + store.groupDevices).first { $0.name == defaults.string(forKey: "open") }
                     openedFolder = store.groups(.folder).first { $0.name == defaults.string(forKey: "folder") }
+                    inviting = defaults.bool(forKey: "invite")
                 }
                 #endif
             }
@@ -428,7 +430,7 @@ struct DashboardView: View {
             Button("Settings…", systemImage: "gearshape") { openSettings() }
             Button("Edit Dashboard", systemImage: "square.grid.2x2") { startEditing() }
             if !store.isDemo {
-                Button("Invite to Home…", systemImage: "person.2.badge.plus") { store.manageMembers() }
+                Button("Invite to Home…", systemImage: "person.2.badge.plus") { inviting = true }
             }
             Menu("Dashboard", systemImage: "person.crop.circle") {
                 Picker("Dashboard", selection: Binding(get: { profiles.selected }, set: { id in
@@ -456,6 +458,7 @@ struct DashboardView: View {
             Label("Menu", systemImage: "gearshape")
         }
         .simultaneousGesture(LongPressGesture(minimumDuration: 0.5).onEnded { _ in startEditing() })
+        .sheet(isPresented: $inviting) { InviteView().environment(store) }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.json]) { result in
             do {
                 let url = try result.get()

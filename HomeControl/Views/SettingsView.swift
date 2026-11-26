@@ -7,6 +7,7 @@ struct SettingsView: View {
     @Environment(HomeStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
+    @State private var inviting = false
 
     var body: some View {
         NavigationStack {
@@ -31,11 +32,12 @@ struct SettingsView: View {
                 }
                 if !store.isDemo, store.currentHomeID != nil {
                     Section {
-                        Button("Invite People", systemImage: "person.2.badge.plus") { store.manageMembers() }
+                        Button("Invite to Home…", systemImage: "person.2.badge.plus") { inviting = true }
+                            .sheet(isPresented: $inviting) { InviteView().environment(store) }
                     } header: {
                         Text("People")
                     } footer: {
-                        Text("Share \(store.homeName) with family and friends. Each of them can arrange their own dashboard, and send it to you from the dashboard's person menu.")
+                        Text("Share this setup through iCloud and give HomeKit access, so everyone in \(store.homeName) has their own dashboard.")
                     }
                 }
                 Section {

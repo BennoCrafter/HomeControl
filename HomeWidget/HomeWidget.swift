@@ -82,7 +82,7 @@ private struct AccessoryWidgetView: View {
             if let device {
                 switch family {
                 case .accessoryCircular:
-                    Button(intent: ToggleDeviceIntent(id: device.id)) {
+                    Button(intent: SetDeviceIntent(device, to: !device.isActive)) {
                         ZStack {
                             AccessoryWidgetBackground()
                             Image(systemName: device.icon).font(.title2)
@@ -90,7 +90,7 @@ private struct AccessoryWidgetView: View {
                     }
                     .buttonStyle(.plain)
                 case .accessoryRectangular:
-                    Button(intent: ToggleDeviceIntent(id: device.id)) {
+                    Button(intent: SetDeviceIntent(device, to: !device.isActive)) {
                         HStack {
                             Image(systemName: device.icon).font(.title2)
                             VStack(alignment: .leading) {
@@ -118,7 +118,7 @@ private struct AccessoryWidgetView: View {
 
     /// The whole widget is the switch.
     private func small(_ device: Device) -> some View {
-        Button(intent: ToggleDeviceIntent(id: device.id)) {
+        Button(intent: SetDeviceIntent(device, to: !device.isActive)) {
             VStack(alignment: .leading, spacing: 4) {
                 Image(systemName: device.icon)
                     .font(.title.weight(.semibold))
@@ -195,7 +195,7 @@ private struct RoomWidgetView: View {
             }
             HStack(alignment: .top, spacing: 8) {
                 ForEach(devices.prefix(4)) { device in
-                    Button(intent: ToggleDeviceIntent(id: device.id)) {
+                    Button(intent: SetDeviceIntent(device, to: !device.isActive)) {
                         VStack(spacing: 6) {
                             Image(systemName: device.icon)
                                 .font(.title3.weight(.semibold))

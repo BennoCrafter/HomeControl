@@ -95,33 +95,8 @@ struct RoomQuery: EntityQuery {
     }
 }
 
-/// A live activity intent runs in the app's process, which is the one that can reach HomeKit.
-struct ToggleDeviceIntent: LiveActivityIntent {
-    static let title: LocalizedStringResource = "Toggle Accessory"
-    static let isDiscoverable = false
-
-    @Parameter(title: "Accessory ID")
-    var id: String
-
-    init() {}
-
-    init(id: UUID) {
-        self.id = id.uuidString
-    }
-
-    @MainActor func perform() async throws -> some IntentResult {
-        guard let uuid = UUID(uuidString: id), let device = WidgetData.snapshot()?.devices.first(where: { $0.id == uuid }) else {
-            return .result()
-        }
-        let target = device.toggled()
-        WidgetData.update(uuid) { $0 = target }
-        WidgetCenter.shared.reloadAllTimelines()
-        try await DeviceActions.setOn?(uuid, target.isActive)
-        return .result()
-    }
-}
-
-/// The Control Center toggle's action.
+/// Switches an item to a given state: Control Center's toggle and every widget button.
+/// A live activity intent runs in the app's process, the one that can reach HomeKit.
 struct SetDeviceIntent: SetValueIntent, LiveActivityIntent {
     static let title: LocalizedStringResource = "Turn Accessory On or Off"
     static let isDiscoverable = false
@@ -134,12 +109,19 @@ struct SetDeviceIntent: SetValueIntent, LiveActivityIntent {
 
     init() {}
 
+    /// A widget button: the state it switches to is decided when the widget is drawn.
+    init(_ device: Device, to value: Bool) {
+        self.device = DeviceEntity(device)
+        self.value = value
+    }
+
     @MainActor func perform() async throws -> some IntentResult {
         guard let id = device.flatMap({ UUID(uuidString: $0.id) }) else { return .result() }
         WidgetData.update(id) { device in
             if device.kind == .blinds { device.value = value ? 1 : 0 } else { device.isOn = device.kind == .garage ? !value : value }
         }
         ControlCenter.shared.reloadAllControls()
+        WidgetCenter.shared.reloadAllTimelines()
         try await DeviceActions.setOn?(id, value)
         return .result()
     }

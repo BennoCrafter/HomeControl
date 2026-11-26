@@ -26,9 +26,14 @@ struct DashboardView: View {
 
     private var homeID: String { store.currentHomeID ?? "" }
 
+    /// This screen size's layout, of the chosen profile.
     private var cards: [DashboardCard] {
-        allCards.filter { $0.homeID == homeID && isValid($0) }
+        allCards.filter { $0.homeID == homeID && $0.columns == columns && $0.memberID == profiles.selected && isValid($0) }
     }
+
+    @State private var profiles = Profiles(homeID: "")
+    @State private var namingProfile = false
+    @State private var newProfileName = ""
 
     /// Cards of items or rooms that left the home are skipped, not deleted: they may come back.
     private func isValid(_ card: DashboardCard) -> Bool {
@@ -71,8 +76,11 @@ struct DashboardView: View {
                     }
                 }
                 .toolbar { toolbar(columns: columns) }
-                .task(id: homeID) { seedIfNeeded(columns: columns) }
-                .onChange(of: columns, initial: true) { self.columns = columns }
+                .task(id: "\(homeID)\(columns)\(profiles.selected)") {
+                    self.columns = columns
+                    if profiles.homeID != homeID { profiles = Profiles(homeID: homeID) }
+                    seedIfNeeded(columns: columns)
+                }
                 #if DEBUG
                 // Screenshots: `-edit YES` starts in edit mode.
                 .task { isEditing = UserDefaults.standard.bool(forKey: "edit") }
@@ -223,7 +231,7 @@ struct DashboardView: View {
                     DeviceTile(device: device, showRoom: true) { selected = device }
                 }
             case .room:
-                RoomCard(room: card.ref, large: card.height > 2 || card.width > 4) { openedRoom = card.ref }
+                RoomCard(room: card.ref, large: card.height > 2 || card.width >= 4) { openedRoom = card.ref }
             case .status:
                 StatusCard(compact: card.width < 4)
             case .camera:
@@ -280,12 +288,47 @@ struct DashboardView: View {
             }
             ToolbarItem(placement: .topBarTrailing) { addMenu(columns: columns) }
         }
+        ToolbarItem(placement: .topBarLeading) { if !isEditing { profileMenu } }
         ToolbarItem(placement: .topBarTrailing) {
             Button(isEditing ? "Done" : "Edit") {
                 withAnimation(.spring(duration: 0.35, bounce: 0.3)) { isEditing.toggle() }
             }
             .fontWeight(isEditing ? .semibold : .regular)
             .disabled(store.devices.isEmpty)
+        }
+    }
+
+    /// Everyone's own dashboard on a shared device. "Me" is this device's Home member.
+    private var profileMenu: some View {
+        Menu {
+            Picker("Dashboard", selection: Binding(get: { profiles.selected }, set: { id in
+                withAnimation(.spring(duration: 0.45, bounce: 0.25)) { profiles.selected = id }
+            })) {
+                ForEach(profiles.all) { profile in
+                    Label(profile.name, systemImage: profile.id.isEmpty ? "person.crop.circle.fill" : "person.crop.circle").tag(profile.id)
+                }
+            }
+            Button("Add Person…", systemImage: "person.badge.plus") { namingProfile = true }
+            if !profiles.selected.isEmpty {
+                Button("Remove \(profiles.name(of: profiles.selected))", systemImage: "person.badge.minus", role: .destructive) {
+                    withAnimation { profiles.remove(profiles.selected) }
+                }
+            }
+        } label: {
+            Label(profiles.name(of: profiles.selected), systemImage: "person.crop.circle")
+                .labelStyle(.titleAndIcon)
+        }
+        .alert("Add Person", isPresented: $namingProfile) {
+            TextField("Name", text: $newProfileName)
+            Button("Add") {
+                let name = newProfileName.trimmingCharacters(in: .whitespaces)
+                newProfileName = ""
+                guard !name.isEmpty else { return }
+                withAnimation { profiles.add(name) }
+            }
+            Button("Cancel", role: .cancel) { newProfileName = "" }
+        } message: {
+            Text("Each person in the home gets their own dashboard on this device.")
         }
     }
 
@@ -324,13 +367,14 @@ struct DashboardView: View {
     // MARK: - Saving
 
     private func add(_ kind: DashboardCard.Kind, ref: String, columns: Int) {
-        let size = kind.defaultSize
+        let size = kind.defaultSize(columns: columns)
         let spot = DashboardEngine.freeSpot(width: size.width, height: size.height, in: Array(committed(columns: columns).values), columns: columns)
         @Dependency(\.defaultDatabase) var database
         withAnimation(.spring(duration: 0.4, bounce: 0.35)) {
             try? database.write { db in
                 try DashboardCard.insert {
-                    DashboardCard.Draft(homeID: homeID, kind: kind, ref: ref, x: spot.x, y: spot.y, width: spot.width, height: spot.height)
+                    DashboardCard.Draft(homeID: homeID, kind: kind, ref: ref, x: spot.x, y: spot.y, width: spot.width, height: spot.height,
+                                        columns: columns, memberID: profiles.selected)
                 }.execute(db)
             }
         }
@@ -360,14 +404,19 @@ struct DashboardView: View {
 
     private func reset() {
         @Dependency(\.defaultDatabase) var database
-        try? database.write { db in try DashboardCard.where { $0.homeID.eq(homeID) }.delete().execute(db) }
-        UserDefaults.standard.removeObject(forKey: "dashboardSeeded.\(homeID)")
+        let (columns, member) = (columns, profiles.selected)
+        try? database.write { db in
+            try DashboardCard.where { $0.homeID.eq(homeID) && $0.columns.eq(columns) && $0.memberID.eq(member) }.delete().execute(db)
+        }
+        UserDefaults.standard.removeObject(forKey: seededKey)
         seedIfNeeded(columns: columns)
     }
 
+    private var seededKey: String { "dashboardSeeded.\(homeID).\(columns).\(profiles.selected)" }
+
     /// A first layout per home: the status, then every room. Only once, so an emptied dashboard stays empty.
     private func seedIfNeeded(columns: Int) {
-        let key = "dashboardSeeded.\(homeID)"
+        let key = seededKey
         guard !homeID.isEmpty, !store.devices.isEmpty, !UserDefaults.standard.bool(forKey: key) else { return }
         UserDefaults.standard.set(true, forKey: key)
         add(.status, ref: "", columns: columns)

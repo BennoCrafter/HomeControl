@@ -47,6 +47,10 @@ struct DashboardCard: Identifiable, Hashable, Sendable {
     var y = 0
     var width = 2
     var height = 2
+    /// The grid it was arranged on: phones (4) and wide screens (8) each keep their own layout.
+    var columns = 4
+    /// Whose dashboard: a profile's id, the same on every device of one Home member.
+    var memberID = ""
 }
 
 /// The home's background and how see-through the tiles are.
@@ -154,6 +158,10 @@ enum Schema {
                 ) STRICT
                 """
             ).execute(db)
+        }
+        migrator.registerMigration("Add card columns and member") { db in
+            try #sql(#"ALTER TABLE "cards" ADD COLUMN "columns" INTEGER NOT NULL DEFAULT 4"#).execute(db)
+            try #sql(#"ALTER TABLE "cards" ADD COLUMN "memberID" TEXT NOT NULL DEFAULT ''"#).execute(db)
         }
         return migrator
     }

@@ -28,12 +28,13 @@ extension DashboardCard.Kind {
         }
     }
 
-    var defaultSize: (width: Int, height: Int) {
+    /// Wide screens get roomier first cards: a full-width status, rooms two to a row.
+    func defaultSize(columns: Int) -> (width: Int, height: Int) {
         switch self {
         case .item: (2, 1)
-        case .status: (4, 1)
-        case .room: (2, 2)
-        case .camera: (2, 2)
+        case .status: (columns, 1)
+        case .room: columns > 4 ? (4, 2) : (2, 2)
+        case .camera: columns > 4 ? (4, 3) : (2, 2)
         }
     }
 }

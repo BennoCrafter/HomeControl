@@ -207,13 +207,17 @@ struct StatusSheet: View {
     @Environment(HomeStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     @State private var done = 0
+    /// Fixed when the sheet opens: re-sorting as things switch would move the row from under the finger.
+    @State private var order: [UUID] = []
 
     var body: some View {
         let items = category.items(in: store.devices)
         let attention = items.filter(category.needsAttention)
+        let sorted = items.sorted { (order.firstIndex(of: $0.id) ?? .max) < (order.firstIndex(of: $1.id) ?? .max) }
         NavigationStack {
             Form {
-                if let action = action(attention) {
+                // Always there, greyed out when there's nothing to do: appearing would push the rows down.
+                if let action = action() {
                     Section {
                         Button(action.title, systemImage: action.icon) {
                             for device in attention {
@@ -223,10 +227,11 @@ struct StatusSheet: View {
                         }
                         .font(.headline)
                         .frame(maxWidth: .infinity)
+                        .disabled(attention.isEmpty)
                     }
                 }
                 Section {
-                    ForEach(attention + items.filter { !category.needsAttention($0) }) { MemberRow(device: $0) }
+                    ForEach(sorted) { MemberRow(device: $0) }
                 }
             }
             .formStyle(.grouped)
@@ -235,15 +240,18 @@ struct StatusSheet: View {
             .navigationTitle(category.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) { Button("Done", systemImage: "xmark") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) { Button("Done", systemImage: "checkmark") { dismiss() } }
             }
         }
         .presentationDetents([.medium, .large])
         .sensoryFeedback(.success, trigger: done)
+        .onAppear {
+            // The ones needing attention first, once.
+            order = (attention + items.filter { !category.needsAttention($0) }).map(\.id)
+        }
     }
 
-    private func action(_ attention: [Device]) -> (title: LocalizedStringKey, icon: String)? {
-        guard !attention.isEmpty else { return nil }
+    private func action() -> (title: LocalizedStringKey, icon: String)? {
         switch category {
         case .lights: return ("Turn All Off", "lightbulb.slash")
         case .locks: return ("Lock All", "lock.fill")

@@ -98,7 +98,7 @@ struct DashboardView: View {
         NavigationStack {
             GeometryReader { geometry in
                 let columns = geometry.size.width < 600 ? 4 : 8
-                let spacing: CGFloat = geometry.size.width < 600 ? 10 : 14
+                let spacing: CGFloat = geometry.size.width < 600 ? 12 : 14
                 let cell = max(1, (geometry.size.width - spacing * CGFloat(columns + 1)) / CGFloat(columns))
                 // Rows a little shorter than wide: item cards read as tiles, not squares.
                 // Never shorter than a tile: a phone on its side gets 8 narrow columns.

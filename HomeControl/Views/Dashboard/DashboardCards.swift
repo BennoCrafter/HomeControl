@@ -88,61 +88,165 @@ struct RoomCard: View {
 }
 
 /// What needs attention: lights left on, open doors and windows, unlocked locks, the temperature.
+/// Each chip opens its items.
 struct StatusCard: View {
     let compact: Bool
     @Environment(HomeStore.self) private var store
     @Environment(\.tileOpacity) private var tileOpacity
-    @State private var allOff = 0
+    @State private var opened: StatusCategory?
 
     var body: some View {
-        let lights = store.devices.filter { $0.kind == .light && $0.isOn }
-        let open = store.devices.filter { ($0.kind == .contact && $0.isContactOpen) || ($0.kind == .garage && !$0.isOn) }
-        let unlocked = store.devices.filter { $0.kind == .lock && !$0.isOn }
-        let temperatures = store.devices.compactMap { $0.kind == .thermostat ? $0.currentValue : nil }
-        let chips: [(String, String, Color, Int?)] = [
-            ("lightbulb.fill", lights.isEmpty ? String(localized: "Lights off") : String(localized: "\(lights.count) on"), .yellow, lights.count),
-            ("door.left.hand.open", open.isEmpty ? String(localized: "All closed") : String(localized: "\(open.count) open"), .mint, open.count),
-            ("lock.open.fill", unlocked.isEmpty ? String(localized: "Locked") : String(localized: "\(unlocked.count) unlocked"), .red, unlocked.count),
-            ("thermometer.medium", temperatures.isEmpty ? "–" : Device.celsius(temperatures.reduce(0, +) / Double(temperatures.count)), .orange, nil),
-        ]
+        let chips = StatusCategory.allCases.map { ($0, $0.items(in: store.devices)) }
         ViewThatFits(in: .horizontal) {
-            HStack(spacing: 8) { ForEach(chips.indices, id: \.self) { chip(chips[$0], lights: lights) } }
-            HStack(spacing: 8) { ForEach(chips.prefix(2).indices, id: \.self) { chip(chips[$0], lights: lights) } }
+            HStack(spacing: 8) { ForEach(chips, id: \.0) { chip($0.0, $0.1) } }
+            HStack(spacing: 8) { ForEach(chips.prefix(2), id: \.0) { chip($0.0, $0.1) } }
         }
         .padding(12)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(.secondarySystemGroupedBackground).opacity(tileOpacity), in: .rect(cornerRadius: 20, style: .continuous))
         .overlay { RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(.white.opacity(0.08)) }
-        .sensoryFeedback(.success, trigger: allOff)
+        .sheet(item: $opened) { StatusSheet(category: $0).environment(store) }
+        .sensoryFeedback(.impact(weight: .light), trigger: opened)
     }
 
-    private func chip(_ chip: (String, String, Color, Int?), lights: [Device]) -> some View {
-        let (icon, text, tint, count) = chip
-        let alert = (count ?? 0) > 0
-        return Button {
-            // The lights chip turns every light off: the one thing you want from it on the way out.
-            guard icon == "lightbulb.fill", !lights.isEmpty else { return }
-            for light in lights {
-                store.binding(for: light).wrappedValue.isOn = false
-            }
-            allOff += 1
-        } label: {
+    private func chip(_ category: StatusCategory, _ items: [Device]) -> some View {
+        let count = items.count(where: category.needsAttention)
+        let alert = category != .climate && count > 0
+        return Button { opened = category } label: {
             HStack(spacing: 6) {
-                Image(systemName: icon)
+                Image(systemName: category.icon)
                     .symbolEffect(.bounce, value: count)
-                    .foregroundStyle(alert ? tint : .secondary)
-                Text(text)
+                    .foregroundStyle(alert ? category.tint : .secondary)
+                Text(category.summary(items))
                     .font(.subheadline.weight(.semibold))
                     .lineLimit(1)
                     .contentTransition(.numericText())
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 9)
-            .background(alert ? tint.opacity(0.18) : Color.primary.opacity(0.05), in: .capsule)
+            .background(alert ? category.tint.opacity(0.18) : Color.primary.opacity(0.05), in: .capsule)
         }
         .buttonStyle(PressScale(scale: 0.9))
         .fixedSize()
-        .animation(.spring(duration: 0.3), value: text)
+        .disabled(items.isEmpty)
+        .animation(.spring(duration: 0.3), value: count)
+    }
+}
+
+enum StatusCategory: String, CaseIterable, Identifiable {
+    case lights, openings, locks, climate
+
+    var id: String { rawValue }
+
+    var icon: String {
+        switch self {
+        case .lights: "lightbulb.fill"
+        case .openings: "door.left.hand.open"
+        case .locks: "lock.open.fill"
+        case .climate: "thermometer.medium"
+        }
+    }
+
+    var tint: Color {
+        switch self {
+        case .lights: .yellow
+        case .openings: .mint
+        case .locks: .red
+        case .climate: .orange
+        }
+    }
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .lights: "Lights"
+        case .openings: "Doors & Windows"
+        case .locks: "Locks"
+        case .climate: "Climate"
+        }
+    }
+
+    func items(in devices: [Device]) -> [Device] {
+        devices.filter { device in
+            switch self {
+            case .lights: device.kind == .light
+            case .openings: device.kind == .contact || device.kind == .garage
+            case .locks: device.kind == .lock
+            case .climate: device.kind == .thermostat
+            }
+        }
+    }
+
+    /// On, open or unlocked.
+    func needsAttention(_ device: Device) -> Bool {
+        switch self {
+        case .lights: device.isOn
+        case .openings: device.isActive
+        case .locks: !device.isOn
+        case .climate: false
+        }
+    }
+
+    func summary(_ items: [Device]) -> String {
+        let count = items.count(where: needsAttention)
+        switch self {
+        case .lights: return count == 0 ? String(localized: "Lights off") : String(localized: "\(count) on")
+        case .openings: return count == 0 ? String(localized: "All closed") : String(localized: "\(count) open")
+        case .locks: return count == 0 ? String(localized: "Locked") : String(localized: "\(count) unlocked")
+        case .climate:
+            let temperatures = items.compactMap(\.currentValue)
+            return temperatures.isEmpty ? "–" : Device.celsius(temperatures.reduce(0, +) / Double(temperatures.count))
+        }
+    }
+}
+
+/// Every item behind a status chip, the ones needing attention first, with the obvious action on top.
+struct StatusSheet: View {
+    let category: StatusCategory
+    @Environment(HomeStore.self) private var store
+    @Environment(\.dismiss) private var dismiss
+    @State private var done = 0
+
+    var body: some View {
+        let items = category.items(in: store.devices)
+        let attention = items.filter(category.needsAttention)
+        NavigationStack {
+            Form {
+                if let action = action(attention) {
+                    Section {
+                        Button(action.title, systemImage: action.icon) {
+                            for device in attention {
+                                store.binding(for: device).wrappedValue = device.setting(active: category == .locks)
+                            }
+                            done += 1
+                        }
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                    }
+                }
+                Section {
+                    ForEach(attention + items.filter { !category.needsAttention($0) }) { MemberRow(device: $0) }
+                }
+            }
+            .formStyle(.grouped)
+            .scrollContentBackground(.hidden)
+            .containerBackground(.clear, for: .navigation)
+            .navigationTitle(category.title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) { Button("Done", systemImage: "xmark") { dismiss() } }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .sensoryFeedback(.success, trigger: done)
+    }
+
+    private func action(_ attention: [Device]) -> (title: LocalizedStringKey, icon: String)? {
+        guard !attention.isEmpty else { return nil }
+        switch category {
+        case .lights: return ("Turn All Off", "lightbulb.slash")
+        case .locks: return ("Lock All", "lock.fill")
+        case .openings, .climate: return nil
+        }
     }
 }
 

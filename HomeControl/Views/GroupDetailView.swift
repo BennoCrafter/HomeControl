@@ -133,8 +133,8 @@ private struct RemoteView: View {
     }
 }
 
-/// One member: tap the icon to switch it, a slider when it dims or moves.
-private struct MemberRow: View {
+/// One item in a list: tap the icon to switch it, a slider when it dims or moves.
+struct MemberRow: View {
     let device: Device
     @Environment(HomeStore.self) private var store
     @Environment(\.itemPrefs) private var prefs

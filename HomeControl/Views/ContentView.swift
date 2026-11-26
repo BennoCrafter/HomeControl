@@ -76,6 +76,12 @@ struct ContentView: View {
         .environment(\.roomIcons, roomIcons)
         .environment(\.appearance, appearance)
         .environment(\.tileOpacity, appearance.tileOpacity)
+        #if DEBUG
+        // Screenshots: `-gradientEditor YES` opens the background editor.
+        .sheet(isPresented: .constant(UserDefaults.standard.bool(forKey: "gradientEditor"))) {
+            GradientEditor(style: appearance.gradient) { _ in }
+        }
+        #endif
         .sheet(isPresented: $showingSettings) {
             SettingsView()
                 .environment(store)

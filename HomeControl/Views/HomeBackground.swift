@@ -44,6 +44,13 @@ enum BackgroundPreset: String, CaseIterable, Identifiable {
     }
 }
 
+extension Appearance {
+    var gradient: GradientStyle {
+        get { gradientJSON.flatMap { try? JSONDecoder().decode(GradientStyle.self, from: $0) } ?? GradientStyle() }
+        set { gradientJSON = try? JSONEncoder().encode(newValue) }
+    }
+}
+
 extension EnvironmentValues {
     /// The current home's look.
     @Entry var appearance = Appearance(id: "")
@@ -55,7 +62,10 @@ struct HomeBackground: View {
 
     var body: some View {
         Group {
-            if appearance.background == "photo", let data = appearance.photo, let image = UIImage(data: data) {
+            if appearance.background == "custom" {
+                GrainyGradient(style: appearance.gradient)
+                    .overlay(Color(.systemBackground).opacity(0.15))
+            } else if appearance.background == "photo", let data = appearance.photo, let image = UIImage(data: data) {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFill()
@@ -75,6 +85,7 @@ struct AppearanceSection: View {
     @Environment(\.appearance) private var appearance
     @State private var photo: PhotosPickerItem?
     @State private var opacity: Double?
+    @State private var editingGradient = false
 
     var body: some View {
         Section {
@@ -86,6 +97,19 @@ struct AppearanceSection: View {
                         } action: {
                             save { $0.background = preset.rawValue }
                         }
+                    }
+                    swatch("Custom", selected: appearance.background == "custom") {
+                        GrainyGradient(style: appearance.gradient)
+                            .overlay(alignment: .bottomTrailing) {
+                                Image(systemName: "slider.horizontal.3")
+                                    .font(.caption.bold())
+                                    .foregroundStyle(.white)
+                                    .padding(5)
+                                    .background(.black.opacity(0.3), in: .circle)
+                                    .padding(4)
+                            }
+                    } action: {
+                        editingGradient = true
                     }
                     PhotosPicker(selection: $photo, matching: .images) {
                         Swatch(title: "Photo", selected: appearance.background == "photo", content: photoPreview)
@@ -109,6 +133,14 @@ struct AppearanceSection: View {
             Text("The background of this home, and how solid the tiles are on top of it.")
         }
         .sensoryFeedback(.selection, trigger: appearance.background)
+        .sheet(isPresented: $editingGradient) {
+            GradientEditor(style: appearance.gradient) { style in
+                save {
+                    $0.gradient = style
+                    $0.background = "custom"
+                }
+            }
+        }
         .onChange(of: photo) {
             Task {
                 guard let data = try? await photo?.loadTransferable(type: Data.self), let image = UIImage(data: data) else { return }

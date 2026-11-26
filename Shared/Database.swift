@@ -63,6 +63,8 @@ struct Appearance: Identifiable, Hashable, Sendable {
     var photo: Data?
     /// 0 is clear, 1 is solid.
     var tileOpacity = 0.6
+    /// The editor's grainy gradient as JSON, used when `background` is "custom".
+    var gradientJSON: Data?
 }
 
 /// The latest state of every item, for the widgets, which can't reach HomeKit themselves.
@@ -162,6 +164,9 @@ enum Schema {
         migrator.registerMigration("Add card columns and member") { db in
             try #sql(#"ALTER TABLE "cards" ADD COLUMN "columns" INTEGER NOT NULL DEFAULT 4"#).execute(db)
             try #sql(#"ALTER TABLE "cards" ADD COLUMN "memberID" TEXT NOT NULL DEFAULT ''"#).execute(db)
+        }
+        migrator.registerMigration("Add appearance gradient") { db in
+            try #sql(#"ALTER TABLE "appearances" ADD COLUMN "gradientJSON" BLOB"#).execute(db)
         }
         return migrator
     }

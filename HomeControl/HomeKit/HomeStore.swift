@@ -115,7 +115,11 @@ final class HomeStore: NSObject {
 
     /// Each group as one item: the main member's state, or on when any member is.
     var groupDevices: [Device] {
-        groups(.group).compactMap { group in
+        devices(for: groups(.group))
+    }
+
+    private func devices(for groups: [DeviceGroup]) -> [Device] {
+        groups.compactMap { group in
             let members = members(of: group)
             guard let first = members.first else { return nil }
             let main = members.first { $0.id == group.mainID }
@@ -288,7 +292,11 @@ extension HomeStore {
         guard let currentHomeID else { return }
         @Dependency(\.defaultDatabase) var database
         do {
-            let snapshot = try Snapshot(id: currentHomeID, homeName: homeName, devicesJSON: JSONEncoder().encode(devices + groupDevices), updatedAt: .now)
+            // Read afresh: right after a group is saved, the fetched groups haven't caught up yet.
+            let groups = try database.read { db in
+                try DeviceGroup.where { $0.homeID.eq(currentHomeID) && $0.kind.eq(DeviceGroup.Kind.group) }.fetchAll(db)
+            }
+            let snapshot = try Snapshot(id: currentHomeID, homeName: homeName, devicesJSON: JSONEncoder().encode(devices + devices(for: groups)), updatedAt: .now)
             try database.write { db in try Snapshot.upsert { snapshot }.execute(db) }
         } catch {
             logger.error("Saving the widget snapshot failed: \(error)")

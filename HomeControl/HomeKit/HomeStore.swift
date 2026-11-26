@@ -19,8 +19,16 @@ struct HomeOption: Identifiable, Hashable {
 @Observable
 final class HomeStore: NSObject {
     private(set) var devices: [Device] = [] {
-        didSet { saveSnapshot() }
+        didSet {
+            let old = Dictionary(oldValue.map { ($0.id, $0.currentState) }) { first, _ in first }
+            for device in devices where old[device.id] != device.currentState {
+                lastChanged[device.id] = .now
+            }
+            saveSnapshot()
+        }
     }
+    /// When an item's reported state last changed, while the app was running: HomeKit doesn't keep a history.
+    private(set) var lastChanged: [UUID: Date] = [:]
     private(set) var homeName = "Home"
     private(set) var access = HomeAccess.notRequested
     private(set) var homes: [HomeOption] = [.demo]

@@ -34,6 +34,10 @@ struct DeviceDetailView: View {
                 if current.isReachable && current.kind.isControllable {
                     Section("Control") { DeviceControls(device: binding) }
                 }
+                if current.kind == .contact {
+                    Section { ContactView(device: current, since: store.lastChanged[current.id]) }
+                        .listRowBackground(Color.clear)
+                }
             }
             .formStyle(.grouped)
             .navigationTitle(current.name)
@@ -65,7 +69,9 @@ struct DeviceControls: View {
             Toggle("Heating", isOn: $device.isOn)
             Stepper("Target \(Device.celsius(device.value))", value: $device.value, in: 10...30, step: 0.5)
         case .lock:
-            Toggle("Locked", isOn: $device.isOn)
+            LockControl(device: $device)
+                .frame(maxWidth: .infinity)
+                .listRowBackground(Color.clear)
         case .garage:
             GarageControl(device: $device)
                 .frame(maxWidth: .infinity)

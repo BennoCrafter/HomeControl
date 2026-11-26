@@ -18,6 +18,14 @@ struct RoomView: View {
         }
         .background(Color(.systemGroupedBackground))
         .navigationTitle(title)
+        #if DEBUG
+        // Screenshots: `-open "Front Door"` opens that item's details.
+        .task {
+            if let name = UserDefaults.standard.string(forKey: "open") {
+                selected = devices.first { $0.name == name }
+            }
+        }
+        #endif
         .sheet(item: $selected) { DeviceDetailView(device: $0).environment(store) }
     }
 }

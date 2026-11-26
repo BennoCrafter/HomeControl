@@ -135,7 +135,6 @@ struct ContentView: View {
                     Prefs.update(room: room.id, in: homeID) { $0.icon = icon }
                 }
             }
-            .sensoryFeedback(.selection, trigger: selectedRoom)
             .listStyle(.sidebar)
             .navigationTitle(store.homeName)
             #if !targetEnvironment(macCatalyst)

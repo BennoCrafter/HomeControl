@@ -44,8 +44,6 @@ final class HomeStore: NSObject {
     /// HomeKit's id of the home on this device; differs per person.
     private(set) var homeKitID: String?
     var message: String? = "Allow Home access in Settings to see your accessories."
-    /// Set to show Apple's screen for people once nothing of ours is in the way.
-    var wantsMemberManagement = false
 
     /// Created on demand: instantiating HMHomeManager is what triggers the system permission prompt.
     @ObservationIgnored private var manager: HMHomeManager?
@@ -473,19 +471,15 @@ extension HomeStore {
         }
     }
 
-    /// Asks the app to close its sheets and then show Apple's screen: over a sheet, it draws on top of that sheet's bar.
-    func requestMemberManagement() {
-        wantsMemberManagement = true
-    }
-
-    /// Apple's own screen for inviting people to the home and setting what they may do.
-    func manageMembers() {
+    /// Apple's own screen for inviting people to the home and setting what they may do. `done` runs when it closes.
+    func manageMembers(done: @escaping @MainActor () -> Void = {}) {
         guard let home else {
             logger.error("Managing members: no HomeKit home \(self.homeKitID ?? "nil")")
-            return
+            return done()
         }
         home.manageUsers { error in
             if let error { logger.error("Managing members failed: \(error)") }
+            Task { @MainActor in done() }
         }
     }
 

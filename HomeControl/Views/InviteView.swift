@@ -10,6 +10,7 @@ struct InviteView: View {
     @State private var sharedRecord: SharedRecord?
     @State private var preparing = false
     @State private var error: String?
+    @State private var homeKitOpen = false
 
     var body: some View {
         let share = store.homeShare()
@@ -57,8 +58,10 @@ struct InviteView: View {
                     step(2, title: "Give HomeKit access",
                          text: "So they can switch the accessories too. Apple's Home screen for people opens.") {
                         Button {
-                            dismiss()
-                            store.requestMemberManagement()
+                            // Called from this open sheet, the one place HomeKit's screen shows; our bar hides meanwhile,
+                            // as Apple's see-through bar would show its buttons.
+                            homeKitOpen = true
+                            store.manageMembers { homeKitOpen = false }
                         } label: {
                             Label("Open Home Access", systemImage: "homekit")
                                 .frame(maxWidth: .infinity)
@@ -83,6 +86,7 @@ struct InviteView: View {
                 .frame(maxWidth: .infinity)
             }
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar(homeKitOpen ? .hidden : .visible, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done", systemImage: "checkmark") { dismiss() } }
             }

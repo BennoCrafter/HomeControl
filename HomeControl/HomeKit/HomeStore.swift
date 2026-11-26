@@ -41,6 +41,7 @@ final class HomeStore: NSObject {
     @ObservationIgnored private var manager: HMHomeManager?
     @ObservationIgnored private var services: [UUID: HMService] = [:]
     @ObservationIgnored private(set) var cameras: [UUID: HMCameraProfile] = [:]
+    @ObservationIgnored @FetchAll private var groupRows: [DeviceGroup]
 
     private static let requestedKey = "homeAccessRequested"
     private static let homeKey = "selectedHome"
@@ -78,9 +79,65 @@ final class HomeStore: NSObject {
 
     func binding(for device: Device) -> Binding<Device> {
         Binding(
-            get: { self.devices.first { $0.id == device.id } ?? device },
+            get: { (self.devices + self.groupDevices).first { $0.id == device.id } ?? device },
             set: { self.update($0) }
         )
+    }
+
+    // MARK: - Groups
+
+    /// This home's groups, collections and folders.
+    func groups(_ kind: DeviceGroup.Kind) -> [DeviceGroup] {
+        groupRows.filter { $0.homeID == currentHomeID && $0.kind == kind }
+    }
+
+    func group(id: Int) -> DeviceGroup? {
+        groupRows.first { $0.id == id }
+    }
+
+    /// The group an item stands in for.
+    func group(for deviceID: UUID) -> DeviceGroup? {
+        groups(.group).first { $0.deviceID == deviceID }
+    }
+
+    func members(of group: DeviceGroup) -> [Device] {
+        group.memberIDs.compactMap { id in devices.first { $0.id == id } }
+    }
+
+    /// Items that are in a group: the rooms show the group instead.
+    var groupedIDs: Set<UUID> {
+        Set(groups(.group).flatMap(\.memberIDs))
+    }
+
+    /// Each group as one item: the main member's state, or on when any member is.
+    var groupDevices: [Device] {
+        groups(.group).compactMap { group in
+            let members = members(of: group)
+            guard let first = members.first else { return nil }
+            let main = members.first { $0.id == group.mainID }
+            var device = main ?? first.setting(active: members.contains(where: \.isActive))
+            device.id = group.deviceID
+            device.name = group.name.isEmpty ? first.accessoryName : group.name
+            device.accessoryName = String(localized: "\(members.count) items")
+            device.room = String(localized: "Groups")
+            device.isReachable = members.contains(where: \.isReachable)
+            device.customIcon = group.icon
+            return device
+        }
+    }
+
+    /// The main member takes the group's new state; without one, every member is switched.
+    private func update(group: DeviceGroup, to new: Device) {
+        let members = members(of: group)
+        if let main = members.first(where: { $0.id == group.mainID }) {
+            var target = new
+            (target.id, target.name, target.accessoryName, target.room, target.customIcon) = (main.id, main.name, main.accessoryName, main.room, nil)
+            update(target)
+        } else {
+            for member in members where member.kind.isControllable {
+                update(member.setting(active: new.isActive))
+            }
+        }
     }
 
     fileprivate func reload() {
@@ -158,6 +215,7 @@ final class HomeStore: NSObject {
 
     /// Optimistically updates the UI, then writes the changed characteristics to HomeKit.
     private func update(_ new: Device) {
+        if let group = group(for: new.id) { return update(group: group, to: new) }
         guard let i = devices.firstIndex(where: { $0.id == new.id }) else { return }
         if isDemo {
             simulate(from: devices[i], to: new)
@@ -208,19 +266,19 @@ extension HomeStore {
     /// From a widget or control: waits for HomeKit to load the home when the app was launched for it.
     func set(_ id: UUID, active: Bool) async throws {
         reconnect()
-        for _ in 0 ..< 50 where !devices.contains(where: { $0.id == id }) {
+        for _ in 0 ..< 50 where !(devices + groupDevices).contains(where: { $0.id == id }) {
             try await Task.sleep(for: .milliseconds(100))
         }
-        guard let device = devices.first(where: { $0.id == id }), device.isActive != active else { return }
+        guard let device = (devices + groupDevices).first(where: { $0.id == id }), device.isActive != active else { return }
         update(device.toggled())
     }
 
     /// The widgets read the home from here; reloaded at most every few seconds while sliders move.
-    private func saveSnapshot() {
+    func saveSnapshot() {
         guard let currentHomeID else { return }
         @Dependency(\.defaultDatabase) var database
         do {
-            let snapshot = try Snapshot(id: currentHomeID, homeName: homeName, devicesJSON: JSONEncoder().encode(devices), updatedAt: .now)
+            let snapshot = try Snapshot(id: currentHomeID, homeName: homeName, devicesJSON: JSONEncoder().encode(devices + groupDevices), updatedAt: .now)
             try database.write { db in try Snapshot.upsert { snapshot }.execute(db) }
         } catch {
             logger.error("Saving the widget snapshot failed: \(error)")

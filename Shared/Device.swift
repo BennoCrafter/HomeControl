@@ -22,7 +22,7 @@ enum DeviceKind: String, Codable, CaseIterable {
 
 /// Snapshot of one controllable service, independent of HomeKit types.
 struct Device: Identifiable, Codable, Hashable {
-    let id: UUID
+    var id: UUID
     var name: String
     var accessoryName: String
     var room: String
@@ -40,6 +40,8 @@ struct Device: Identifiable, Codable, Hashable {
     /// Reported reading: room temperature (°C) or blinds position (0...1).
     var currentValue: Double?
     var isObstructed = false
+    /// A group's own icon.
+    var customIcon: String?
 
     /// Whether the tile is highlighted. An open garage door counts as active, like in the Home app.
     var isActive: Bool {
@@ -52,7 +54,8 @@ struct Device: Identifiable, Codable, Hashable {
     }
 
     var icon: String {
-        switch kind {
+        if let customIcon { return customIcon }
+        return switch kind {
         case .light: isOn ? "lightbulb.fill" : "lightbulb"
         case .thermostat: "thermometer.medium"
         case .lock: isOn ? "lock.fill" : "lock.open.fill"
@@ -116,6 +119,11 @@ struct Device: Identifiable, Codable, Hashable {
         var device = self
         if kind == .blinds { device.value = isActive ? 0 : 1 } else { device.isOn.toggle() }
         return device
+    }
+
+    /// Switched on or off the way a tap on the icon would.
+    func setting(active: Bool) -> Device {
+        isActive == active ? self : toggled()
     }
 
     static func celsius(_ value: Double) -> String {

@@ -62,6 +62,7 @@ struct Device: Identifiable, Codable, Hashable {
         case .garage: isOn ? "door.garage.closed" : "door.garage.open"
         case .plug: "powerplug.fill"
         case .blinds: value > 0 ? "blinds.horizontal.open" : "blinds.horizontal.closed"
+        case .contact where isWindow: isContactOpen ? "window.vertical.open" : "window.vertical.closed"
         case .contact: isContactOpen ? "door.left.hand.open" : "door.left.hand.closed"
         case .camera: "web.camera.fill"
         }
@@ -100,6 +101,11 @@ struct Device: Identifiable, Codable, Hashable {
         case .camera:
             return "Camera"
         }
+    }
+
+    /// A contact sensor on a window rather than a door, going by its name.
+    var isWindow: Bool {
+        ["window", "fenster"].contains { name.lowercased().contains($0) }
     }
 
     /// Contact sensors report 0 when contact is detected (closed) and 1 when it is broken (open).

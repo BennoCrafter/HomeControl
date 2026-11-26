@@ -1,8 +1,10 @@
+import CloudKit
 import SQLiteData
 import SwiftUI
 
 @main
 struct HomeControlApp: App {
+    @UIApplicationDelegateAdaptor private var appDelegate: AppDelegate
     @State private var store: HomeStore
     @State private var showingSettings = false
 
@@ -11,7 +13,15 @@ struct HomeControlApp: App {
             checkDashboardEngine()
         #endif
         do {
-            try prepareDependencies { $0.defaultDatabase = try Schema.database() }
+            try prepareDependencies {
+                $0.defaultDatabase = try Schema.database()
+                // The whole setup syncs through iCloud and can be shared with family; the widget snapshot stays local.
+                $0.defaultSyncEngine = try SyncEngine(
+                    for: $0.defaultDatabase,
+                    tables: Home.self, RoomPref.self, ItemPref.self, DashboardCard.self, DeviceGroup.self, Appearance.self,
+                    containerIdentifier: "iCloud.de.bennowo.homecontrol"
+                )
+            }
         } catch {
             // Preferences are a nicety: without them the app still controls the home.
             logger.error("Opening the database failed: \(error)")
@@ -45,6 +55,38 @@ struct HomeControlApp: App {
             CommandGroup(replacing: .appSettings) {
                 Button("Settings…") { showingSettings = true }
                     .keyboardShortcut(",")
+            }
+        }
+    }
+}
+
+/// Hands the scene a delegate that can accept iCloud share invitations.
+final class AppDelegate: NSObject, UIApplicationDelegate {
+    func application(_: UIApplication, configurationForConnecting session: UISceneSession,
+                     options _: UIScene.ConnectionOptions) -> UISceneConfiguration {
+        let configuration = UISceneConfiguration(name: nil, sessionRole: session.role)
+        configuration.delegateClass = SceneDelegate.self
+        return configuration
+    }
+}
+
+/// Someone tapped a family member's invitation: join their home's setup.
+final class SceneDelegate: NSObject, UIWindowSceneDelegate {
+    func windowScene(_: UIWindowScene, userDidAcceptCloudKitShareWith metadata: CKShare.Metadata) {
+        accept(metadata)
+    }
+
+    func scene(_: UIScene, willConnectTo _: UISceneSession, options: UIScene.ConnectionOptions) {
+        if let metadata = options.cloudKitShareMetadata { accept(metadata) }
+    }
+
+    private func accept(_ metadata: CKShare.Metadata) {
+        @Dependency(\.defaultSyncEngine) var syncEngine
+        Task {
+            do {
+                try await syncEngine.acceptShare(metadata: metadata)
+            } catch {
+                logger.error("Accepting the share failed: \(error)")
             }
         }
     }

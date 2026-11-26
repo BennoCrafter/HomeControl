@@ -18,6 +18,9 @@ struct HomeControlApp: App {
         }
         // After the database: the store reads its groups from it.
         _store = State(initialValue: HomeStore.shared)
+        #if DEBUG
+            checkDashboardSharing()
+        #endif
         setUpWidgetActions()
     }
 

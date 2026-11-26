@@ -116,3 +116,40 @@ extension DashboardCard.Kind {
     /// Its ref is a `DeviceGroup`'s id.
     var isGroup: Bool { self == .group || self == .collection || self == .folder }
 }
+
+#if DEBUG
+    /// Runs once at launch in debug builds: a dashboard with a folder, a group and a collection holding that group
+    /// survives a trip to another device whose items have other ids.
+    @MainActor
+    func checkDashboardSharing() {
+        let lamp = Device(id: UUID(), name: "Lamp", accessoryName: "Lamp", room: "Den", kind: .light)
+        var theirs = lamp
+        theirs.id = UUID()
+        let group = DeviceGroup(id: 5, homeID: "a", kind: .group, name: "G", members: lamp.id.uuidString, mainID: lamp.id)
+        let collection = DeviceGroup(id: 6, homeID: "a", kind: .collection, name: "C", members: group.deviceID.uuidString)
+        let folder = DeviceGroup(id: 7, homeID: "a", kind: .folder, name: "F")
+        let cards = [
+            DashboardCard(id: 1, homeID: "a", kind: .group, ref: "5"),
+            DashboardCard(id: 2, homeID: "a", kind: .collection, ref: "6"),
+            DashboardCard(id: 3, homeID: "a", kind: .folder, ref: "7"),
+            DashboardCard(id: 4, homeID: "a", kind: .item, ref: lamp.id.uuidString, folderID: 7),
+        ]
+        let file = DashboardFile(cards: cards, devices: [lamp], groups: [group, collection, folder])
+        withDependencies {
+            let database = try! DatabaseQueue()
+            try! Schema.migrator().migrate(database)
+            $0.defaultDatabase = database
+        } operation: {
+            @Dependency(\.defaultDatabase) var database
+            try! file.install(homeID: "b", memberID: "", devices: [theirs])
+            let groups = try! database.read { db in try DeviceGroup.all.fetchAll(db) }
+            let installed = try! database.read { db in try DashboardCard.all.fetchAll(db) }
+            let newGroup = groups.first { $0.kind == .group }!
+            let newFolder = groups.first { $0.kind == .folder }!
+            assert(groups.count == 3 && newGroup.memberIDs == [theirs.id] && newGroup.mainID == theirs.id)
+            assert(groups.first { $0.kind == .collection }!.memberIDs == [newGroup.deviceID])
+            assert(installed.first { $0.kind == .item }.map { $0.ref == theirs.id.uuidString && $0.folderID == newFolder.id } == true)
+        }
+        UserDefaults.standard.removeObject(forKey: "dashboardSeeded.b.4.")
+    }
+#endif

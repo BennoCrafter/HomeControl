@@ -4,7 +4,7 @@ import SwiftUI
 struct ContentView: View {
     @Environment(HomeStore.self) private var store
     @Binding var showingSettings: Bool
-    @State private var selectedRoom: String? = "All"
+    @State private var roomPath: [String] = []
     @AppStorage("hasOnboarded") private var hasOnboarded = false
     @FetchAll private var roomPrefs: [RoomPref]
     @FetchAll private var itemPrefs: [ItemPref]
@@ -84,6 +84,8 @@ struct ContentView: View {
         .environment(\.appearance, appearance)
         .environment(\.tileOpacity, appearance.tileOpacity)
         #if DEBUG
+        // Screenshots: `-tab Rooms` starts on that tab.
+        .task { if let start = UserDefaults.standard.string(forKey: "tab") { tab = start } }
         // Screenshots: `-gradientEditor YES` opens the background editor.
         .sheet(isPresented: .constant(UserDefaults.standard.bool(forKey: "gradientEditor"))) {
             GradientEditor(style: appearance.gradient) { _ in }
@@ -114,79 +116,81 @@ struct ContentView: View {
             }
         case "room":
             tab = "Rooms"
-            selectedRoom = value
+            roomPath = [value]
         default:
             break
         }
     }
 
+    /// Every room as a card, like the dashboard's: switch from here, tap the name to go in, drag to reorder.
     private var roomsView: some View {
-        @Bindable var store = store
-        return NavigationSplitView {
-            List(selection: $selectedRoom) {
-                Label("All Devices", systemImage: "house.fill")
-                    .badge(visible(store.devices + store.groupDevices).count)
-                    .tag("All")
-
-                Section("Rooms") {
+        NavigationStack(path: $roomPath) {
+            ScrollView {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 300), spacing: 14)], spacing: 14) {
                     ForEach(rooms, id: \.self) { room in
-                        Label {
-                            Text(room)
-                        } icon: {
-                            Image(systemName: roomIcons[room] ?? Self.icon(forRoom: room))
-                                .overlay(alignment: .topTrailing) {
-                                    if isPinned(room) {
-                                        Image(systemName: "pin.fill").font(.system(size: 8)).foregroundStyle(.orange).offset(x: 6, y: -4)
-                                    }
+                        RoomCard(title: room, icon: roomIcons[room] ?? Self.icon(forRoom: room), items: visible(store.items(in: room)),
+                                 large: true) { roomPath.append(room) } openItem: { linkedItem = $0 }
+                            .frame(height: 148)
+                            .overlay(alignment: .topTrailing) {
+                                if isPinned(room) {
+                                    Image(systemName: "pin.fill").font(.caption2).foregroundStyle(.orange).padding(10)
                                 }
-                        }
-                        .badge(visible(store.devices + store.groupDevices).count { $0.room == room })
-                        .tag(room)
-                        .contextMenu {
-                            Button(isPinned(room) ? "Unpin" : "Pin to Top", systemImage: isPinned(room) ? "pin.slash" : "pin") {
-                                withAnimation(.snappy) { Prefs.update(room: room, in: homeID) { $0.isPinned.toggle() } }
                             }
-                            Button("Change Icon", systemImage: "square.grid.2x2") { iconRoom = room }
-                        }
-                    }
-                    .onMove { from, to in
-                        var order = rooms
-                        order.move(fromOffsets: from, toOffset: to)
-                        withAnimation(.snappy) { Prefs.reorder(rooms: order, in: homeID) }
+                            .contextMenu {
+                                Button(isPinned(room) ? "Unpin" : "Pin to Top", systemImage: isPinned(room) ? "pin.slash" : "pin") {
+                                    withAnimation(.snappy) { Prefs.update(room: room, in: homeID) { $0.isPinned.toggle() } }
+                                }
+                                Button("Change Icon", systemImage: "square.grid.2x2") { iconRoom = room }
+                            }
+                            .draggable(room)
+                            .dropDestination(for: String.self) { dropped, _ in
+                                guard let moved = dropped.first, moved != room, let to = rooms.firstIndex(of: room) else { return false }
+                                var order = rooms.filter { $0 != moved }
+                                order.insert(moved, at: min(to, order.count))
+                                withAnimation(.spring(duration: 0.35, bounce: 0.3)) { Prefs.reorder(rooms: order, in: homeID) }
+                                return true
+                            }
                     }
                 }
+                .padding()
+            }
+            .background(HomeBackground())
+            .navigationTitle(store.homeName)
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationDestination(for: String.self) { room in
+                RoomView(title: room == "All" ? String(localized: "All Devices") : room,
+                         devices: visible(room == "All" ? store.groupDevices + store.devices : store.items(in: room)),
+                         showRoom: room == "All")
+            }
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("All Devices", systemImage: "square.grid.3x3.fill") { roomPath.append("All") }
+                }
+                #if !targetEnvironment(macCatalyst)
+                // On the Mac, Settings lives in the app menu (⌘,).
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Settings", systemImage: "gearshape") { showingSettings = true }
+                }
+                #endif
             }
             .sheet(item: Binding(get: { iconRoom.map(IdentifiedString.init) }, set: { iconRoom = $0?.id })) { room in
                 IconPicker(title: room.id, current: roomIcons[room.id], tint: .accentColor) { icon in
                     Prefs.update(room: room.id, in: homeID) { $0.icon = icon }
                 }
             }
-            .listStyle(.sidebar)
-            .navigationTitle(store.homeName)
-            #if !targetEnvironment(macCatalyst)
-            // On the Mac, Settings lives in the app menu (⌘,).
-            .toolbar {
-                Button("Settings", systemImage: "gear") { showingSettings = true }
+            .overlay {
+                if store.devices.isEmpty, let message = store.message {
+                    ContentUnavailableView(message, systemImage: "house")
+                }
             }
-            #endif
-        } detail: {
-            let room = selectedRoom ?? "All"
-            RoomView(title: room == "All" ? String(localized: "All Devices") : room,
-                     devices: visible((store.groupDevices + store.devices).filter { room == "All" || $0.room == room }),
-                     showRoom: room == "All")
-                .overlay {
-                    if store.devices.isEmpty, let message = store.message {
-                        ContentUnavailableView(message, systemImage: "house")
-                    }
+            .safeAreaInset(edge: .bottom) {
+                if !store.devices.isEmpty, let message = store.message {
+                    Button(message, systemImage: "exclamationmark.triangle") { store.message = nil }
+                        .padding()
+                        .background(.thinMaterial, in: .capsule)
+                        .padding()
                 }
-                .safeAreaInset(edge: .bottom) {
-                    if !store.devices.isEmpty, let message = store.message {
-                        Button(message, systemImage: "exclamationmark.triangle") { store.message = nil }
-                            .padding()
-                            .background(.thinMaterial, in: .capsule)
-                            .padding()
-                    }
-                }
+            }
         }
     }
 

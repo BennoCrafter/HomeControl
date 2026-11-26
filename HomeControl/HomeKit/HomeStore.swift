@@ -153,6 +153,7 @@ final class HomeStore: NSObject {
         if selected == HomeOption.demo.id {
             currentHomeID = HomeOption.demo.id
             homeName = HomeOption.demo.name
+            DemoHome.seedGroups()
             devices = DemoHome.devices()
             message = nil
             return
@@ -247,6 +248,11 @@ final class HomeStore: NSObject {
                 try? await Task.sleep(for: .seconds(2.2))
                 guard let j = devices.firstIndex(where: { $0.id == new.id }), devices[j].currentState == 2 || devices[j].currentState == 3 else { return }
                 devices[j].currentState = devices[j].isOn ? 1 : 0
+            }
+        case .plug where device.accessoryName == DemoHome.speaker && device.isOn && device.name != "Mute":
+            // Play, Pause and Stop exclude each other, like the player behind them.
+            for j in devices.indices where devices[j].accessoryName == DemoHome.speaker && !["Mute", device.name].contains(devices[j].name) {
+                devices[j].isOn = false
             }
         default: break
         }

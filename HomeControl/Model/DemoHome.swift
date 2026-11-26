@@ -1,4 +1,5 @@
 import Foundation
+import SQLiteData
 
 /// Sample accessories for trying the app without HomeKit access.
 enum DemoHome {
@@ -8,6 +9,10 @@ enum DemoHome {
                    isOn: true, value: 0.8),
             Device(id: id("Floor Lamp"), name: "Floor Lamp", accessoryName: "Floor Lamp", room: "Living Room", kind: .light,
                    isOn: false, value: 0.5),
+            Device(id: id("Speaker Play"), name: "Play", accessoryName: speaker, room: "Living Room", kind: .plug),
+            Device(id: id("Speaker Pause"), name: "Pause", accessoryName: speaker, room: "Living Room", kind: .plug, isOn: true),
+            Device(id: id("Speaker Stop"), name: "Stop", accessoryName: speaker, room: "Living Room", kind: .plug),
+            Device(id: id("Speaker Mute"), name: "Mute", accessoryName: speaker, room: "Living Room", kind: .plug),
             Device(id: id("Shutters"), name: "Shutters", accessoryName: "Shutters", room: "Living Room", kind: .blinds,
                    value: 0.6, currentValue: 0.6),
             Device(id: id("Thermostat"), name: "Thermostat", accessoryName: "Thermostat", room: "Living Room", kind: .thermostat,
@@ -35,6 +40,20 @@ enum DemoHome {
             Device(id: id("Garage Light"), name: "Garage Light", accessoryName: "Switch", room: "Garage", kind: .light,
                    hasValue: false),
         ]
+    }
+
+    static let speaker = "Living Room Speaker"
+
+    /// The speaker's four switches come grouped, once, so the group panel can be tried right away.
+    @MainActor
+    static func seedGroups() {
+        let key = "demoGroupsSeeded"
+        guard !UserDefaults.standard.bool(forKey: key) else { return }
+        UserDefaults.standard.set(true, forKey: key)
+        var group = DeviceGroup.Draft(homeID: HomeOption.demo.id, name: speaker, icon: "hifispeaker.fill", mainID: id("Speaker Play"))
+        group.members = ["Speaker Play", "Speaker Pause", "Speaker Stop", "Speaker Mute"].map { id($0).uuidString }.joined(separator: ",")
+        @Dependency(\.defaultDatabase) var database
+        try? database.write { db in try DeviceGroup.insert { group }.execute(db) }
     }
 
     /// The same id every launch, so pins, icons and dashboard cards stick to demo items too.

@@ -16,15 +16,28 @@ struct InviteView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
-                    Image(systemName: "person.2.fill")
-                        .font(.system(size: 44))
-                        .foregroundStyle(.white)
+                    Image("ShareIcon")
+                        .resizable()
                         .frame(width: 96, height: 96)
-                        .background(Color.accentColor.gradient, in: .circle)
+                        .clipShape(.rect(cornerRadius: 22, style: .continuous))
+                        .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
+                        .overlay(alignment: .bottomTrailing) {
+                            Image(systemName: "person.2.fill")
+                                .font(.caption.bold())
+                                .foregroundStyle(.white)
+                                .frame(width: 34, height: 34)
+                                .background(Color.accentColor.gradient, in: .circle)
+                                .overlay { Circle().strokeBorder(.background, lineWidth: 3) }
+                                .offset(x: 8, y: 8)
+                        }
                         .padding(.top, 8)
-                    Text("Invite to \(store.homeName)")
-                        .font(.title2.bold())
-                        .multilineTextAlignment(.center)
+                    VStack(spacing: 4) {
+                        Text("HomeControl Sharing")
+                            .font(.title2.bold())
+                        Text("Invite family to \(store.homeName)")
+                            .foregroundStyle(.secondary)
+                    }
+                    .multilineTextAlignment(.center)
                     step(1, title: "Share this setup",
                          text: "Groups, dashboards, icons and backgrounds stay in sync for everyone through iCloud. Each person keeps their own dashboard.") {
                         Button {
@@ -44,7 +57,12 @@ struct InviteView: View {
                     step(2, title: "Give HomeKit access",
                          text: "So they can switch the accessories too. Apple's Home screen for people opens.") {
                         Button {
-                            store.manageMembers()
+                            // Apple's screen shows on its own; over this sheet it would sit behind our buttons.
+                            dismiss()
+                            Task {
+                                try? await Task.sleep(for: .milliseconds(500))
+                                store.manageMembers()
+                            }
                         } label: {
                             Label("Open Home Access", systemImage: "homekit")
                                 .frame(maxWidth: .infinity)
@@ -108,6 +126,8 @@ struct InviteView: View {
             guard let home = try await database.read({ db in try Home.find(id).fetchOne(db) }) else { return }
             sharedRecord = try await syncEngine.share(record: home) { share in
                 share[CKShare.SystemFieldKey.title] = String(localized: "Join \(store.homeName) in HomeControl")
+                share[CKShare.SystemFieldKey.thumbnailImageData] = UIImage(named: "ShareIcon")?.pngData()
+                share[CKShare.SystemFieldKey.shareType] = "de.bennowo.homecontrol.home"
             }
         } catch {
             self.error = error.localizedDescription

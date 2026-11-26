@@ -11,6 +11,9 @@ struct ContentView: View {
     @FetchAll private var appearances: [Appearance]
     @State private var iconRoom: String?
     @State private var showingHidden = false
+    @State private var tab = "Dashboard"
+    /// Opened from a widget.
+    @State private var linkedItem: Device?
 
     var body: some View {
         // Onboarding replaces the whole window so nothing of the main UI shows behind it.
@@ -68,9 +71,9 @@ struct ContentView: View {
     }
 
     private var home: some View {
-        TabView {
-            Tab("Dashboard", systemImage: "square.grid.2x2.fill") { DashboardView() }
-            Tab("Rooms", systemImage: "house.fill") { roomsView }
+        TabView(selection: $tab) {
+            Tab("Dashboard", systemImage: "square.grid.2x2.fill", value: "Dashboard") { DashboardView() }
+            Tab("Rooms", systemImage: "house.fill", value: "Rooms") { roomsView }
         }
         .tabViewStyle(.sidebarAdaptable)
         .environment(\.itemPrefs, prefsByItem)
@@ -83,10 +86,32 @@ struct ContentView: View {
             GradientEditor(style: appearance.gradient) { _ in }
         }
         #endif
+        .onOpenURL(perform: open)
+        .sheet(item: $linkedItem) { DeviceDetailView(device: $0).environment(store) }
         .sheet(isPresented: $showingSettings) {
             SettingsView()
                 .environment(store)
                 .environment(\.appearance, appearance)
+        }
+    }
+
+    /// Widget links: `homecontrol://item/<id>` opens an item's details, `homecontrol://room/<name>` a room.
+    private func open(_ url: URL) {
+        guard url.scheme == "homecontrol", let value = url.pathComponents.dropFirst().first else { return }
+        switch url.host() {
+        case "item":
+            Task {
+                // Launched by the tap: give HomeKit a moment to hand over the home.
+                for _ in 0 ..< 50 where !(store.devices + store.groupDevices).contains(where: { $0.id.uuidString == value }) {
+                    try? await Task.sleep(for: .milliseconds(100))
+                }
+                linkedItem = (store.devices + store.groupDevices).first { $0.id.uuidString == value }
+            }
+        case "room":
+            tab = "Rooms"
+            selectedRoom = value
+        default:
+            break
         }
     }
 

@@ -170,7 +170,7 @@ struct LevelControl: View {
             .contentShape(.rect(cornerRadius: 40))
             .gesture(SpatialTapGesture().onEnded { tap in jump(to: 1 - tap.location.y / height) })
         }
-        .frame(width: 130, height: 300)
+        .frame(width: 160, height: 300)
         .padding(.vertical, Self.dragSlop)
         .frame(maxWidth: .infinity)
         .contentShape(.rect)
@@ -200,7 +200,7 @@ struct LevelControl: View {
 
     private var dial: some View {
         let size: CGFloat = 260
-        let lineWidth: CGFloat = 30
+        let lineWidth: CGFloat = 44
         let radius = (size - lineWidth) / 2
         let angle = Angle.degrees(-135 + 270 * shown).radians // 0 = 12 o'clock, clockwise
         return ZStack {

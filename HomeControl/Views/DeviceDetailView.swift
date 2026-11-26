@@ -109,11 +109,11 @@ struct PowerButton: View {
     var body: some View {
         Button { isOn.toggle() } label: {
             ZStack {
-                Circle().stroke(.quaternary, lineWidth: 30)
+                Circle().stroke(.quaternary, lineWidth: 44)
                 Circle()
                     .trim(from: 0, to: isOn ? 1 : 0)
                     .rotation(.degrees(-90))
-                    .stroke(tint.gradient, style: StrokeStyle(lineWidth: 30, lineCap: .round))
+                    .stroke(tint.gradient, style: StrokeStyle(lineWidth: 44, lineCap: .round))
                 VStack(spacing: 4) {
                     Image(systemName: icon)
                         .font(.title2)
@@ -127,7 +127,7 @@ struct PowerButton: View {
                 .padding(.vertical, 8)
                 .background(.ultraThinMaterial, in: .rect(cornerRadius: 14))
             }
-            .padding(15)
+            .padding(22)
             .frame(width: 230, height: 230)
             .contentShape(.circle)
         }

@@ -11,6 +11,22 @@ enum WidgetData {
         try? database?.read { db in try Snapshot.order { $0.updatedAt.desc() }.fetchOne(db) }
     }
 
+    private static func cameraURL(_ id: UUID) -> URL? {
+        FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroup)?.appending(path: "camera-\(id.uuidString).jpg")
+    }
+
+    /// A camera's latest still, written by the app for the camera widget.
+    static func saveCameraImage(_ data: Data, for id: UUID) {
+        guard let url = cameraURL(id) else { return }
+        try? data.write(to: url, options: .atomic)
+    }
+
+    static func cameraImage(for id: UUID) -> (data: Data, date: Date)? {
+        guard let url = cameraURL(id), let data = try? Data(contentsOf: url),
+              let date = (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate else { return nil }
+        return (data, date)
+    }
+
     /// Flips an item in the snapshot right away, so the widget answers the tap before HomeKit does.
     static func update(_ id: UUID, _ change: (inout Device) -> Void) {
         guard var snapshot = snapshot() else { return }

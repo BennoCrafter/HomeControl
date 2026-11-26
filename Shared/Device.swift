@@ -98,7 +98,7 @@ struct Device: Identifiable, Codable, Hashable {
         case .contact:
             return isContactOpen ? "Open" : "Closed"
         case .camera:
-            return "Live"
+            return "Camera"
         }
     }
 

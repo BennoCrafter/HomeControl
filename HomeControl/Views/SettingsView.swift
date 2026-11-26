@@ -29,6 +29,15 @@ struct SettingsView: View {
                 if let homeID = store.currentHomeID {
                     AppearanceSection(homeID: homeID)
                 }
+                if !store.isDemo, store.currentHomeID != nil {
+                    Section {
+                        Button("Invite People", systemImage: "person.2.badge.plus") { store.manageMembers() }
+                    } header: {
+                        Text("People")
+                    } footer: {
+                        Text("Share \(store.homeName) with family and friends. Each of them can arrange their own dashboard, and send it to you from the dashboard's person menu.")
+                    }
+                }
                 Section {
                     LabeledContent("Status", value: accessText)
                     switch store.access {

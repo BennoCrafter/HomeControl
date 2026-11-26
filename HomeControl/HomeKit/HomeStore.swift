@@ -197,6 +197,14 @@ final class HomeStore: NSObject {
 }
 
 extension HomeStore {
+    /// Apple's own screen for inviting people to the home and setting what they may do.
+    func manageMembers() {
+        guard let home = manager?.homes.first(where: { $0.uniqueIdentifier.uuidString == currentHomeID }) else { return }
+        home.manageUsers { error in
+            if let error { logger.error("Managing members failed: \(error)") }
+        }
+    }
+
     /// From a widget or control: waits for HomeKit to load the home when the app was launched for it.
     func set(_ id: UUID, active: Bool) async throws {
         reconnect()

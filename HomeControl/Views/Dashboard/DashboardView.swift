@@ -34,6 +34,13 @@ struct DashboardView: View {
     @State private var profiles = Profiles(homeID: "")
     @State private var namingProfile = false
     @State private var newProfileName = ""
+    @State private var importing = false
+    @State private var importError: String?
+
+    /// Every card of the chosen person in this home, both screen sizes: what a shared file holds.
+    private var shareableCards: [DashboardCard] {
+        allCards.filter { $0.homeID == homeID && $0.memberID == profiles.selected && isValid($0) }
+    }
 
     /// Cards of items or rooms that left the home are skipped, not deleted: they may come back.
     private func isValid(_ card: DashboardCard) -> Bool {
@@ -309,6 +316,19 @@ struct DashboardView: View {
                 }
             }
             Button("Add Person…", systemImage: "person.badge.plus") { namingProfile = true }
+            Section {
+                ShareLink(item: DashboardFile(cards: shareableCards, devices: store.devices),
+                          preview: SharePreview("\(profiles.name(of: profiles.selected))'s Dashboard", image: Image(systemName: "square.grid.2x2")))
+                Button("Import Dashboard…", systemImage: "square.and.arrow.down") { importing = true }
+                let others = profiles.all.filter { $0.id != profiles.selected }
+                if !others.isEmpty {
+                    Menu("Copy From", systemImage: "doc.on.doc") {
+                        ForEach(others) { profile in
+                            Button(profile.name) { copy(from: profile.id) }
+                        }
+                    }
+                }
+            }
             if !profiles.selected.isEmpty {
                 Button("Remove \(profiles.name(of: profiles.selected))", systemImage: "person.badge.minus", role: .destructive) {
                     withAnimation { profiles.remove(profiles.selected) }
@@ -317,6 +337,24 @@ struct DashboardView: View {
         } label: {
             Label(profiles.name(of: profiles.selected), systemImage: "person.crop.circle")
                 .labelStyle(.titleAndIcon)
+        }
+        .fileImporter(isPresented: $importing, allowedContentTypes: [.json]) { result in
+            do {
+                let url = try result.get()
+                let access = url.startAccessingSecurityScopedResource()
+                defer { if access { url.stopAccessingSecurityScopedResource() } }
+                let file = try JSONDecoder().decode(DashboardFile.self, from: Data(contentsOf: url))
+                withAnimation(.spring(duration: 0.45, bounce: 0.25)) {
+                    try? file.install(homeID: homeID, memberID: profiles.selected, devices: store.devices)
+                }
+            } catch {
+                importError = error.localizedDescription
+            }
+        }
+        .alert("Couldn't Import", isPresented: Binding(get: { importError != nil }, set: { if !$0 { importError = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(importError ?? "")
         }
         .alert("Add Person", isPresented: $namingProfile) {
             TextField("Name", text: $newProfileName)
@@ -329,6 +367,13 @@ struct DashboardView: View {
             Button("Cancel", role: .cancel) { newProfileName = "" }
         } message: {
             Text("Each person in the home gets their own dashboard on this device.")
+        }
+    }
+
+    private func copy(from member: String) {
+        let source = allCards.filter { $0.homeID == homeID && $0.memberID == member }
+        withAnimation(.spring(duration: 0.45, bounce: 0.25)) {
+            try? DashboardFile(cards: source, devices: store.devices).install(homeID: homeID, memberID: profiles.selected, devices: store.devices)
         }
     }
 

@@ -124,10 +124,26 @@ struct PowerButton: View {
         Button { isOn.toggle() } label: {
             ZStack {
                 Circle().stroke(.quaternary, lineWidth: 44)
+                // No sweep: a switch has no in-between, so the whole ring pulses on at once.
                 Circle()
-                    .trim(from: 0, to: isOn ? 1 : 0)
-                    .rotation(.degrees(-90))
-                    .stroke(tint.gradient, style: StrokeStyle(lineWidth: 44, lineCap: .round))
+                    .stroke(tint.gradient, lineWidth: 44)
+                    .opacity(isOn ? 1 : 0)
+                    .scaleEffect(isOn ? 1 : 0.85)
+                // A ripple that rings out each time it turns on.
+                Circle()
+                    .stroke(tint, lineWidth: 6)
+                    .keyframeAnimator(initialValue: Ripple(), trigger: isOn) { ring, ripple in
+                        ring.scaleEffect(ripple.scale).opacity(ripple.opacity)
+                    } keyframes: { _ in
+                        KeyframeTrack(\.scale) {
+                            CubicKeyframe(1, duration: 0.01)
+                            CubicKeyframe(1.35, duration: 0.6)
+                        }
+                        KeyframeTrack(\.opacity) {
+                            CubicKeyframe(isOn ? 0.8 : 0, duration: 0.01)
+                            CubicKeyframe(0, duration: 0.6)
+                        }
+                    }
                 VStack(spacing: 4) {
                     Image(systemName: icon)
                         .font(.title2)
@@ -146,9 +162,18 @@ struct PowerButton: View {
             .contentShape(.circle)
         }
         .buttonStyle(.plain)
-        .animation(.spring(duration: 0.5, bounce: 0.2), value: isOn)
-        .sensoryFeedback(.impact(weight: .medium), trigger: isOn)
+        .keyframeAnimator(initialValue: 1.0, trigger: isOn) { $0.scaleEffect($1) } keyframes: { _ in
+            SpringKeyframe(isOn ? 1.08 : 0.94, duration: 0.12)
+            SpringKeyframe(1, duration: 0.5, spring: .bouncy)
+        }
+        .animation(.spring(duration: 0.35, bounce: 0.45), value: isOn)
+        .sensoryFeedback(trigger: isOn) { _, on in on ? .impact(weight: .heavy) : .impact(weight: .light) }
         .accessibilityLabel("Power")
         .accessibilityValue(isOn ? "On" : "Off")
     }
+}
+
+private struct Ripple {
+    var scale = 1.0
+    var opacity = 0.0
 }

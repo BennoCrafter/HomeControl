@@ -68,12 +68,6 @@ struct DashboardView: View {
         Int(card.ref).flatMap(store.group(id:))
     }
 
-    /// A room's items, without those a group stands in for.
-    private func items(in room: String) -> [Device] {
-        let grouped = store.groupedIDs
-        return store.devices.filter { $0.room == room && !grouped.contains($0.id) }
-    }
-
     private func items(of group: DeviceGroup) -> [Device] {
         let all = store.devices + store.groupDevices
         return group.memberIDs.compactMap { id in all.first { $0.id == id } }
@@ -149,7 +143,7 @@ struct DashboardView: View {
             .sheet(item: $selected) { DeviceDetailView(device: $0).environment(store) }
             .sheet(item: Binding(get: { openedRoom.map(IdentifiedString.init) }, set: { openedRoom = $0?.id })) { room in
                 NavigationStack {
-                    RoomView(title: room.id, devices: store.devices.filter { $0.room == room.id }, showRoom: false)
+                    RoomView(title: room.id, devices: store.items(in: room.id), showRoom: false)
                         .toolbar { Button("Done") { openedRoom = nil } }
                 }
                 .environment(store)
@@ -316,7 +310,7 @@ struct DashboardView: View {
                     DeviceTile(device: device, showRoom: true) { selected = device }
                 }
             case .room:
-                RoomCard(title: card.ref, icon: roomIcons[card.ref] ?? ContentView.icon(forRoom: card.ref), items: items(in: card.ref),
+                RoomCard(title: card.ref, icon: roomIcons[card.ref] ?? ContentView.icon(forRoom: card.ref), items: store.items(in: card.ref),
                          large: card.height > 2 || card.width >= 4) { openedRoom = card.ref }
             case .status:
                 StatusCard(compact: card.width < 4)

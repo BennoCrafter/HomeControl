@@ -108,6 +108,12 @@ final class HomeStore: NSObject {
         group.memberIDs.compactMap { id in devices.first { $0.id == id } }
     }
 
+    /// The items of a room, with groups standing in for their members.
+    func items(in room: String) -> [Device] {
+        let grouped = groupedIDs
+        return groupDevices.filter { $0.room == room } + devices.filter { $0.room == room && !grouped.contains($0.id) }
+    }
+
     /// Items that are in a group: the rooms show the group instead.
     var groupedIDs: Set<UUID> {
         Set(groups(.group).flatMap(\.memberIDs))
@@ -127,7 +133,9 @@ final class HomeStore: NSObject {
             device.id = group.deviceID
             device.name = group.name.isEmpty ? first.accessoryName : group.name
             device.accessoryName = String(localized: "\(members.count) items")
-            device.room = String(localized: "Groups")
+            // In the room most of its members are in, where it takes their place.
+            let rooms = members.map(\.room)
+            device.room = rooms.max { a, b in rooms.count(of: a) < rooms.count(of: b) } ?? first.room
             device.isReachable = members.contains(where: \.isReachable)
             device.customIcon = group.icon
             return device
@@ -373,4 +381,8 @@ extension HomeStore: HMAccessoryDelegate {
     nonisolated func accessoryDidUpdateServices(_ accessory: HMAccessory) {
         MainActor.assumeIsolated { reload() }
     }
+}
+
+private extension Array where Element: Equatable {
+    func count(of element: Element) -> Int { count { $0 == element } }
 }

@@ -122,11 +122,7 @@ struct ContentView: View {
                 Label("All Devices", systemImage: "house.fill")
                     .badge(visible(store.devices + store.groupDevices).count)
                     .tag("All")
-                if !store.groupDevices.isEmpty {
-                    Label("Groups", systemImage: "square.stack.3d.up.fill")
-                        .badge(store.groupDevices.count)
-                        .tag("Groups")
-                }
+
                 Section("Rooms") {
                     ForEach(rooms, id: \.self) { room in
                         Label {
@@ -139,7 +135,7 @@ struct ContentView: View {
                                     }
                                 }
                         }
-                        .badge(visible(store.devices).count { $0.room == room })
+                        .badge(visible(store.devices + store.groupDevices).count { $0.room == room })
                         .tag(room)
                         .contextMenu {
                             Button(isPinned(room) ? "Unpin" : "Pin to Top", systemImage: isPinned(room) ? "pin.slash" : "pin") {
@@ -170,9 +166,8 @@ struct ContentView: View {
             #endif
         } detail: {
             let room = selectedRoom ?? "All"
-            RoomView(title: room == "All" ? String(localized: "All Devices") : room == "Groups" ? String(localized: "Groups") : room,
-                     devices: room == "Groups" ? visible(store.groupDevices)
-                         : visible((room == "All" ? store.groupDevices : []) + store.devices.filter { room == "All" || $0.room == room }),
+            RoomView(title: room == "All" ? String(localized: "All Devices") : room,
+                     devices: visible((store.groupDevices + store.devices).filter { room == "All" || $0.room == room }),
                      showRoom: room == "All")
                 .toolbar {
                     Toggle(isOn: $showingHidden.animation(.snappy)) {

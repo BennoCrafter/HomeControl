@@ -6,6 +6,7 @@ import SwiftUI
 struct DashboardView: View {
     /// The folder shown; nil is the dashboard itself.
     var folder: DeviceGroup?
+    var openSettings: () -> Void = {}
     @Environment(HomeStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     @Environment(\.itemPrefs) private var prefs
@@ -403,51 +404,66 @@ struct DashboardView: View {
             if folder != nil {
                 Button("Close", systemImage: "chevron.down") { dismiss() }
             } else if !isEditing {
-                profileMenu
+                mainMenu
             }
         }
-        ToolbarItem(placement: .topBarTrailing) {
-            Button(isEditing ? "Done" : "Edit") {
-                withAnimation(.spring(duration: 0.35, bounce: 0.3)) { isEditing.toggle() }
+        if isEditing || folder != nil {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(isEditing ? "Done" : "Edit") {
+                    withAnimation(.spring(duration: 0.35, bounce: 0.3)) { isEditing.toggle() }
+                }
+                .fontWeight(isEditing ? .semibold : .regular)
+                .disabled(store.devices.isEmpty)
             }
-            .fontWeight(isEditing ? .semibold : .regular)
-            .disabled(store.devices.isEmpty)
         }
     }
 
+    private func startEditing() {
+        guard !store.devices.isEmpty else { return }
+        withAnimation(.spring(duration: 0.35, bounce: 0.3)) { isEditing = true }
+    }
+
     /// Everyone's own dashboard on a shared device. "Me" is this device's Home member.
-    private var profileMenu: some View {
+    /// Settings, editing, people and dashboards in one place. Holding it starts editing right away.
+    private var mainMenu: some View {
         Menu {
-            Picker("Dashboard", selection: Binding(get: { profiles.selected }, set: { id in
-                withAnimation(.spring(duration: 0.45, bounce: 0.25)) { profiles.selected = id }
-            })) {
-                ForEach(profiles.all) { profile in
-                    Label(profile.name, systemImage: profile.id.isEmpty ? "person.crop.circle.fill" : "person.crop.circle").tag(profile.id)
-                }
+            Button("Settings…", systemImage: "gearshape") { openSettings() }
+            Button("Edit Dashboard", systemImage: "square.grid.2x2") { startEditing() }
+            if !store.isDemo {
+                Button("Invite to Home…", systemImage: "person.2.badge.plus") { store.manageMembers() }
             }
-            Button("Add Person…", systemImage: "person.badge.plus") { namingProfile = true }
-            Section {
-                ShareLink(item: DashboardFile(cards: shareableCards, devices: store.devices, groups: store.allGroups),
-                          preview: SharePreview("\(profiles.name(of: profiles.selected))'s Dashboard", image: Image(systemName: "square.grid.2x2")))
-                Button("Import Dashboard…", systemImage: "square.and.arrow.down") { importing = true }
-                let others = profiles.all.filter { $0.id != profiles.selected }
-                if !others.isEmpty {
-                    Menu("Copy From", systemImage: "doc.on.doc") {
-                        ForEach(others) { profile in
-                            Button(profile.name) { copy(from: profile.id) }
+            Menu("Dashboard", systemImage: "person.crop.circle") {
+                Picker("Dashboard", selection: Binding(get: { profiles.selected }, set: { id in
+                    withAnimation(.spring(duration: 0.45, bounce: 0.25)) { profiles.selected = id }
+                })) {
+                    ForEach(profiles.all) { profile in
+                        Label(profile.name, systemImage: profile.id.isEmpty ? "person.crop.circle.fill" : "person.crop.circle").tag(profile.id)
+                    }
+                }
+                Button("Add Person…", systemImage: "person.badge.plus") { namingProfile = true }
+                Section {
+                    ShareLink(item: DashboardFile(cards: shareableCards, devices: store.devices, groups: store.allGroups),
+                              preview: SharePreview("\(profiles.name(of: profiles.selected))'s Dashboard", image: Image(systemName: "square.grid.2x2")))
+                    Button("Import Dashboard…", systemImage: "square.and.arrow.down") { importing = true }
+                    let others = profiles.all.filter { $0.id != profiles.selected }
+                    if !others.isEmpty {
+                        Menu("Copy From", systemImage: "doc.on.doc") {
+                            ForEach(others) { profile in
+                                Button(profile.name) { copy(from: profile.id) }
+                            }
                         }
                     }
                 }
-            }
-            if !profiles.selected.isEmpty {
-                Button("Remove \(profiles.name(of: profiles.selected))", systemImage: "person.badge.minus", role: .destructive) {
-                    withAnimation { profiles.remove(profiles.selected) }
+                if !profiles.selected.isEmpty {
+                    Button("Remove \(profiles.name(of: profiles.selected))", systemImage: "person.badge.minus", role: .destructive) {
+                        withAnimation { profiles.remove(profiles.selected) }
+                    }
                 }
             }
         } label: {
-            Label(profiles.name(of: profiles.selected), systemImage: "person.crop.circle")
-                .labelStyle(.titleAndIcon)
+            Label("Menu", systemImage: "gearshape")
         }
+        .simultaneousGesture(LongPressGesture(minimumDuration: 0.5).onEnded { _ in startEditing() })
         .fileImporter(isPresented: $importing, allowedContentTypes: [.json]) { result in
             do {
                 let url = try result.get()

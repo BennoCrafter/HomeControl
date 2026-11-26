@@ -72,7 +72,7 @@ struct ContentView: View {
 
     private var home: some View {
         TabView(selection: $tab) {
-            Tab("Dashboard", systemImage: "square.grid.2x2.fill", value: "Dashboard") { DashboardView() }
+            Tab("Dashboard", systemImage: "square.grid.2x2.fill", value: "Dashboard") { DashboardView(openSettings: { showingSettings = true }) }
             Tab("Rooms", systemImage: "house.fill", value: "Rooms") { roomsView }
         }
         .tabViewStyle(.sidebarAdaptable)

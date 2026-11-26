@@ -12,6 +12,6 @@ struct PressScale: ButtonStyle {
 }
 
 extension EnvironmentValues {
-    /// How solid the tiles are over the background (#12): 0 clear, 1 solid.
+    /// How solid the tiles are over the background : 0 clear, 1 solid.
     @Entry var tileOpacity = 1.0
 }

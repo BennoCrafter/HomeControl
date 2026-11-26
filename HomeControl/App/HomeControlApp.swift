@@ -7,6 +7,9 @@ struct HomeControlApp: App {
     @State private var showingSettings = false
 
     init() {
+        #if DEBUG
+            checkDashboardEngine()
+        #endif
         do {
             try prepareDependencies { $0.defaultDatabase = try Schema.database() }
         } catch {

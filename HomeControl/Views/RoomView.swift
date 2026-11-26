@@ -23,6 +23,12 @@ struct RoomView: View {
         .task {
             if let name = UserDefaults.standard.string(forKey: "open") {
                 selected = devices.first { $0.name == name }
+                // `-toggle YES`: flips it a moment later, to catch an animation mid-way.
+                if UserDefaults.standard.bool(forKey: "toggle"), let device = selected {
+                    try? await Task.sleep(for: .seconds(1.5))
+                    let binding = store.binding(for: device)
+                    binding.wrappedValue = binding.wrappedValue.toggled()
+                }
             }
         }
         #endif

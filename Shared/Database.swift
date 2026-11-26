@@ -104,6 +104,17 @@ struct Appearance: Identifiable, Hashable, Sendable {
     var gradientJSON: Data?
 }
 
+/// The home's items as one person's Apple Home names them. HomeKit gives every person other ids for the
+/// same accessory; a family member's device finds its own by name, room and kind, and takes on these ids.
+@Table("homeItems")
+struct HomeItem: Identifiable, Hashable, Sendable {
+    let id: UUID
+    var homeID: String
+    var name = ""
+    var room = ""
+    var kind = ""
+}
+
 /// The latest state of every item, for the widgets, which can't reach HomeKit themselves.
 @Table("snapshots")
 struct Snapshot: Identifiable, Hashable, Sendable {
@@ -125,18 +136,22 @@ nonisolated func uuid() -> UUID {
 }
 
 enum Schema {
-    static func configuration() -> Configuration {
+    nonisolated static let iCloudContainer = "iCloud.de.bennowo.homecontrol"
+
+    /// `syncMetadata`: the app's connection also sees which rows came from someone else's share.
+    static func configuration(syncMetadata: Bool = false) -> Configuration {
         var configuration = Configuration()
         configuration.foreignKeysEnabled = true
         configuration.prepareDatabase { db in
             // New rows get their id from SQLite.
             db.add(function: $uuid)
+            if syncMetadata { try db.attachMetadatabase(containerIdentifier: iCloudContainer) }
         }
         return configuration
     }
 
-    static func database() throws -> any DatabaseWriter {
-        let configuration = configuration()
+    static func database(syncMetadata: Bool = false) throws -> any DatabaseWriter {
+        let configuration = configuration(syncMetadata: syncMetadata)
         let url = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroup)?
             .appending(path: "HomeControl.sqlite")
         // shortcut: without the App Group (unsigned builds) the database is the app's own, so widgets see nothing.
@@ -236,6 +251,19 @@ enum Schema {
             try #sql(#"ALTER TABLE "cards" ADD COLUMN "folderID" INTEGER"#).execute(db)
         }
         migrator.registerMigration("Make tables syncable", migrate: migrateToSyncableTables)
+        migrator.registerMigration("Add home items") { db in
+            try #sql(
+                """
+                CREATE TABLE "homeItems" (
+                  "id" TEXT PRIMARY KEY NOT NULL ON CONFLICT REPLACE DEFAULT (uuid()),
+                  "homeID" TEXT NOT NULL REFERENCES "homes"("id") ON DELETE CASCADE,
+                  "name" TEXT NOT NULL DEFAULT '',
+                  "room" TEXT NOT NULL DEFAULT '',
+                  "kind" TEXT NOT NULL DEFAULT ''
+                ) STRICT
+                """
+            ).execute(db)
+        }
         return migrator
     }
 

@@ -14,12 +14,12 @@ struct HomeControlApp: App {
         #endif
         do {
             try prepareDependencies {
-                $0.defaultDatabase = try Schema.database()
+                $0.defaultDatabase = try Schema.database(syncMetadata: true)
                 // The whole setup syncs through iCloud and can be shared with family; the widget snapshot stays local.
                 $0.defaultSyncEngine = try SyncEngine(
                     for: $0.defaultDatabase,
-                    tables: Home.self, RoomPref.self, ItemPref.self, DashboardCard.self, DeviceGroup.self, Appearance.self,
-                    containerIdentifier: "iCloud.de.bennowo.homecontrol"
+                    tables: Home.self, RoomPref.self, ItemPref.self, DashboardCard.self, DeviceGroup.self, Appearance.self, HomeItem.self,
+                    containerIdentifier: Schema.iCloudContainer
                 )
             }
         } catch {

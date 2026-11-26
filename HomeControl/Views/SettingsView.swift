@@ -12,7 +12,7 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 Section {
-                    Picker("Home", selection: Binding(get: { store.currentHomeID },
+                    Picker("Home", selection: Binding(get: { store.homeKitID },
                                                       set: { if let id = $0 { store.selectHome(id) } })) {
                         ForEach(store.homes) { home in
                             Label(home.name, systemImage: home == .demo ? "sparkles" : "house")

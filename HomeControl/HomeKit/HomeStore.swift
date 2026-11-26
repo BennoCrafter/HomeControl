@@ -1,3 +1,4 @@
+import CloudKit
 import HomeKit
 import SQLiteData
 import SwiftUI
@@ -34,12 +35,17 @@ final class HomeStore: NSObject {
     private(set) var homeName = "Home"
     private(set) var access = HomeAccess.notRequested
     private(set) var homes: [HomeOption] = [.demo]
+    /// The home's id in this app's data: HomeKit's own, or the shared one when a family member shared theirs.
     private(set) var currentHomeID: String?
+    /// HomeKit's id of the home on this device; differs per person.
+    private(set) var homeKitID: String?
     var message: String? = "Allow Home access in Settings to see your accessories."
 
     /// Created on demand: instantiating HMHomeManager is what triggers the system permission prompt.
     @ObservationIgnored private var manager: HMHomeManager?
     @ObservationIgnored private var services: [UUID: HMService] = [:]
+    /// This device's HomeKit ids to the shared ids items are known by.
+    @ObservationIgnored private var sharedIDs: [UUID: UUID] = [:]
     private(set) var cameras: [UUID: HMCameraProfile] = [:]
     @ObservationIgnored @FetchAll private var groupRows: [DeviceGroup]
 
@@ -161,10 +167,12 @@ final class HomeStore: NSObject {
         }
         services = [:]
         cameras = [:]
+        sharedIDs = [:]
 
         let selected = UserDefaults.standard.string(forKey: Self.homeKey)
         if selected == HomeOption.demo.id {
             currentHomeID = HomeOption.demo.id
+            homeKitID = HomeOption.demo.id
             homeName = HomeOption.demo.name
             saveHome()
             DemoHome.seedGroups()
@@ -173,24 +181,25 @@ final class HomeStore: NSObject {
             return
         }
         guard let manager else {
-            currentHomeID = nil
+            (currentHomeID, homeKitID) = (nil, nil)
             devices = []
             message = "Allow Home access in Settings to see your accessories."
             return
         }
         if access == .denied {
-            currentHomeID = nil
+            (currentHomeID, homeKitID) = (nil, nil)
             message = "Home access denied. Enable it in Settings › Privacy › HomeKit."
             devices = []
             return
         }
         guard let home = manager.homes.first(where: { $0.uniqueIdentifier.uuidString == selected }) ?? manager.homes.first else {
-            currentHomeID = nil
+            (currentHomeID, homeKitID) = (nil, nil)
             message = "No home found. Set one up in the Home app or try the Demo Home."
             devices = []
             return
         }
-        currentHomeID = home.uniqueIdentifier.uuidString
+        homeKitID = home.uniqueIdentifier.uuidString
+        currentHomeID = sharedHomeID(named: home.name) ?? homeKitID
         homeName = home.name
         saveHome()
         var result: [Device] = []
@@ -207,8 +216,69 @@ final class HomeStore: NSObject {
                 result.append(Device(camera: camera, accessory: accessory))
             }
         }
-        devices = result
+        sharedIDs = matchSharedIDs(result)
+        services = Dictionary(services.map { (sharedIDs[$0.key] ?? $0.key, $0.value) }) { first, _ in first }
+        cameras = Dictionary(cameras.map { (sharedIDs[$0.key] ?? $0.key, $0.value) }) { first, _ in first }
+        devices = result.map { device in
+            var device = device
+            device.id = sharedIDs[device.id] ?? device.id
+            return device
+        }
+        saveItemDirectory()
         message = result.isEmpty ? "No supported accessories in \(home.name)." : nil
+    }
+
+    /// Reloads when a family member's shared home arrives, so its groups and dashboards line up with this device.
+    func homesChanged() {
+        guard !isDemo, let currentHomeID, sharedHomeID(named: homeName) ?? homeKitID != currentHomeID else { return }
+        reload()
+    }
+
+    // MARK: - Shared ids
+
+    /// A home with this name that someone else shared with this person's iCloud account.
+    private func sharedHomeID(named name: String) -> String? {
+        @Dependency(\.defaultDatabase) var database
+        return try? database.read { db in
+            let shared = try SyncMetadata
+                .where { $0.recordType.eq(Home.tableName) && $0.ownerName.neq(CKCurrentUserDefaultName) }
+                .select(\.recordPrimaryKey)
+                .fetchAll(db)
+            return try Home.where { $0.id.in(shared) && $0.name.eq(name) }.fetchOne(db)?.id
+        }
+    }
+
+    /// Items already in the directory under another id, found by name, room and kind.
+    private func matchSharedIDs(_ local: [Device]) -> [UUID: UUID] {
+        guard let currentHomeID, currentHomeID != homeKitID else { return [:] }
+        @Dependency(\.defaultDatabase) var database
+        let known = (try? database.read { db in try HomeItem.where { $0.homeID.eq(currentHomeID) }.fetchAll(db) }) ?? []
+        var taken = Set<UUID>()
+        var result: [UUID: UUID] = [:]
+        for device in local {
+            guard let match = known.first(where: { !taken.contains($0.id) && $0.name == device.name && $0.room == device.room
+                && $0.kind == device.kind.rawValue }) else { continue }
+            taken.insert(match.id)
+            result[device.id] = match.id
+        }
+        return result
+    }
+
+    /// Writes how this device names the items, so other people's devices can find theirs.
+    private func saveItemDirectory() {
+        guard let currentHomeID, !isDemo else { return }
+        @Dependency(\.defaultDatabase) var database
+        do {
+            try database.write { db in
+                for device in devices {
+                    try HomeItem.upsert {
+                        HomeItem(id: device.id, homeID: currentHomeID, name: device.name, room: device.room, kind: device.kind.rawValue)
+                    }.execute(db)
+                }
+            }
+        } catch {
+            logger.error("Saving the item directory failed: \(error)")
+        }
     }
 
     private func subscribe(to service: HMService, kind: DeviceKind) {
@@ -224,9 +294,11 @@ final class HomeStore: NSObject {
     }
 
     fileprivate func refresh(_ service: HMService) {
-        guard services[service.uniqueIdentifier] != nil,
-              let i = devices.firstIndex(where: { $0.id == service.uniqueIdentifier }) else { return }
-        devices[i] = Device(service: service, kind: devices[i].kind)
+        let id = sharedIDs[service.uniqueIdentifier] ?? service.uniqueIdentifier
+        guard services[id] != nil, let i = devices.firstIndex(where: { $0.id == id }) else { return }
+        var device = Device(service: service, kind: devices[i].kind)
+        device.id = id
+        devices[i] = device
     }
 
     /// Optimistically updates the UI, then writes the changed characteristics to HomeKit.
@@ -280,7 +352,7 @@ final class HomeStore: NSObject {
 
 extension HomeStore {
     private var home: HMHome? {
-        manager?.homes.first { $0.uniqueIdentifier.uuidString == currentHomeID }
+        manager?.homes.first { $0.uniqueIdentifier.uuidString == homeKitID }
     }
 
     /// Every room an item can move to, including empty ones.

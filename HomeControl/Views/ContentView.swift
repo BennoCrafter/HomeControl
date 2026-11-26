@@ -8,6 +8,7 @@ struct ContentView: View {
     @AppStorage("hasOnboarded") private var hasOnboarded = false
     @FetchAll private var roomPrefs: [RoomPref]
     @FetchAll private var itemPrefs: [ItemPref]
+    @FetchAll private var appearances: [Appearance]
     @State private var iconRoom: String?
     @State private var showingHidden = false
 
@@ -27,6 +28,10 @@ struct ContentView: View {
     }
 
     private var homeID: String { store.currentHomeID ?? "" }
+
+    private var appearance: Appearance {
+        appearances.first { $0.id == homeID } ?? Appearance(id: homeID)
+    }
 
     /// Pinned first, then the user's order, then HomeKit's.
     private var rooms: [String] {
@@ -69,7 +74,13 @@ struct ContentView: View {
         .tabViewStyle(.sidebarAdaptable)
         .environment(\.itemPrefs, prefsByItem)
         .environment(\.roomIcons, roomIcons)
-        .sheet(isPresented: $showingSettings) { SettingsView().environment(store) }
+        .environment(\.appearance, appearance)
+        .environment(\.tileOpacity, appearance.tileOpacity)
+        .sheet(isPresented: $showingSettings) {
+            SettingsView()
+                .environment(store)
+                .environment(\.appearance, appearance)
+        }
     }
 
     private var roomsView: some View {

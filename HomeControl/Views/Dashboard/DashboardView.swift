@@ -78,7 +78,7 @@ struct DashboardView: View {
                 .task { isEditing = UserDefaults.standard.bool(forKey: "edit") }
                 #endif
             }
-            .background(Color(.systemGroupedBackground))
+            .background(HomeBackground())
             .navigationTitle(store.homeName)
             .sheet(item: $selected) { DeviceDetailView(device: $0).environment(store) }
             .sheet(item: Binding(get: { openedRoom.map(IdentifiedString.init) }, set: { openedRoom = $0?.id })) { room in

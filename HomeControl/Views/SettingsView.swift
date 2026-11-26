@@ -26,6 +26,9 @@ struct SettingsView: View {
                 } footer: {
                     Text("The Demo Home lets you try every control without connecting to Apple Home.")
                 }
+                if let homeID = store.currentHomeID {
+                    AppearanceSection(homeID: homeID)
+                }
                 Section {
                     LabeledContent("Status", value: accessText)
                     switch store.access {

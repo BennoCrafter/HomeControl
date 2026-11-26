@@ -16,7 +16,7 @@ struct RoomView: View {
             }
             .padding()
         }
-        .background(Color(.systemGroupedBackground))
+        .background(HomeBackground())
         .navigationTitle(title)
         #if DEBUG
         // Screenshots: `-open "Front Door"` opens that item's details.

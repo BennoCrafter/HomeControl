@@ -94,8 +94,8 @@ private struct AccessoryWidgetView: View {
                         HStack {
                             Image(systemName: device.icon).font(.title2)
                             VStack(alignment: .leading) {
-                                Text(device.name).font(.headline).lineLimit(1).minimumScaleFactor(0.6)
-                                Text(device.status).font(.caption)
+                                Text(device.name).font(.headline).lineLimit(1).minimumScaleFactor(0.4)
+                                Text(device.status).font(.caption).lineLimit(1).minimumScaleFactor(0.5)
                             }
                         }
                     }
@@ -107,8 +107,6 @@ private struct AccessoryWidgetView: View {
                 ContentUnavailableView("Open HomeControl", systemImage: "house")
             }
         }
-        // The icon switches; anywhere else opens the item in the app.
-        .widgetURL(device.map { WidgetLink.item($0.id) })
         .containerBackground(for: .widget) {
             if let device, device.isActive {
                 LinearGradient(colors: [device.kind.tint.opacity(0.35), device.kind.tint.opacity(0.12)], startPoint: .top, endPoint: .bottom)
@@ -118,23 +116,26 @@ private struct AccessoryWidgetView: View {
         }
     }
 
+    /// The whole widget is the switch.
     private func small(_ device: Device) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Button(intent: ToggleDeviceIntent(id: device.id)) {
+        Button(intent: ToggleDeviceIntent(id: device.id)) {
+            VStack(alignment: .leading, spacing: 4) {
                 Image(systemName: device.icon)
                     .font(.title.weight(.semibold))
                     .foregroundStyle(device.isActive ? AnyShapeStyle(.white) : AnyShapeStyle(.secondary))
                     .frame(width: 56, height: 56)
                     .background(device.isActive ? AnyShapeStyle(device.kind.tint.gradient) : AnyShapeStyle(.quaternary), in: .circle)
                     .contentTransition(.symbolEffect(.replace))
+                Spacer(minLength: 0)
+                Text(device.name).font(.headline).lineLimit(1).minimumScaleFactor(0.4)
+                Text(device.status).font(.subheadline).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.5)
+                    .contentTransition(.numericText())
             }
-            .buttonStyle(.plain)
-            .invalidatableContent()
-            Spacer(minLength: 0)
-            Text(device.name).font(.headline).lineLimit(2).minimumScaleFactor(0.6)
-            Text(device.status).font(.subheadline).foregroundStyle(.secondary).contentTransition(.numericText())
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .contentShape(.rect)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .buttonStyle(.plain)
+        .invalidatableContent()
     }
 }
 
@@ -201,7 +202,7 @@ private struct RoomWidgetView: View {
                                 .foregroundStyle(device.isActive ? AnyShapeStyle(.white) : AnyShapeStyle(.secondary))
                                 .frame(width: 48, height: 48)
                                 .background(device.isActive ? AnyShapeStyle(device.kind.tint.gradient) : AnyShapeStyle(.quaternary), in: .circle)
-                            Text(device.name).font(.caption2).lineLimit(2).minimumScaleFactor(0.6).multilineTextAlignment(.center)
+                            Text(device.name).font(.caption2).lineLimit(1).minimumScaleFactor(0.4)
                         }
                         .frame(maxWidth: .infinity)
                     }
@@ -210,7 +211,6 @@ private struct RoomWidgetView: View {
             }
             .frame(maxHeight: .infinity)
         }
-        .widgetURL(WidgetLink.room(entry.room))
     }
 }
 

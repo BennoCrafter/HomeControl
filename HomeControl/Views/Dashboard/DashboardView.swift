@@ -312,7 +312,7 @@ struct DashboardView: View {
                 }
             case .room:
                 RoomCard(title: card.ref, icon: roomIcons[card.ref] ?? ContentView.icon(forRoom: card.ref), items: store.items(in: card.ref),
-                         large: card.height > 2 || card.width >= 4) { openedRoom = card.ref }
+                         large: card.height > 2 || card.width >= 4) { openedRoom = card.ref } openItem: { selected = $0 }
             case .status:
                 StatusCard(compact: card.width < 4)
             case .camera:
@@ -326,13 +326,13 @@ struct DashboardView: View {
                         DeviceTile(device: device, showRoom: false) { selected = device }
                     } else {
                         RoomCard(title: group.name, icon: device.icon, items: store.members(of: group),
-                                 large: card.height > 2 || card.width >= 4) { selected = device }
+                                 large: card.height > 2 || card.width >= 4) { selected = device } openItem: { selected = $0 }
                     }
                 }
             case .collection:
                 if let collection = group(card) {
                     RoomCard(title: collection.name, icon: collection.icon ?? "square.grid.2x2.fill", items: items(of: collection),
-                             large: card.height > 2 || card.width >= 4) { openedCollection = collection }
+                             large: card.height > 2 || card.width >= 4) { openedCollection = collection } openItem: { selected = $0 }
                         .contextMenu {
                             Button("Edit Collection…", systemImage: "pencil") { editingCollection = collection }
                         }

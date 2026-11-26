@@ -7,6 +7,8 @@ struct RoomCard: View {
     let items: [Device]
     let large: Bool
     let open: () -> Void
+    /// Sensors and items that ask first open here instead of switching.
+    let openItem: (Device) -> Void
 
     @Environment(HomeStore.self) private var store
     @Environment(\.itemPrefs) private var prefs
@@ -42,7 +44,7 @@ struct RoomCard: View {
             GeometryReader { geometry in
                 let size: CGFloat = large ? 54 : 42
                 let perRow = max(1, Int((geometry.size.width + 8) / (size + 8)))
-                let rows = max(1, Int((geometry.size.height + 8) / (size + (large ? 38 : 8))))
+                let rows = max(1, Int((geometry.size.height + 8) / (size + (large ? 24 : 8))))
                 LazyVGrid(columns: Array(repeating: GridItem(.fixed(size), spacing: 8), count: perRow), alignment: .leading, spacing: 8) {
                     ForEach(devices.prefix(perRow * rows)) { device in
                         toggle(device, size: size)
@@ -60,7 +62,7 @@ struct RoomCard: View {
     private func toggle(_ device: Device, size: CGFloat) -> some View {
         Button {
             guard device.kind.isControllable, device.confirmationAction == nil else {
-                open()
+                openItem(device)
                 return
             }
             let binding = store.binding(for: device)
@@ -76,8 +78,8 @@ struct RoomCard: View {
                     .background(device.isActive ? AnyShapeStyle(device.kind.tint.gradient) : AnyShapeStyle(.quaternary), in: .circle)
                     .shadow(color: device.isActive ? device.kind.tint.opacity(0.45) : .clear, radius: 6, y: 2)
                 if large {
-                    Text(device.name).font(.caption2).lineLimit(2).minimumScaleFactor(0.6).multilineTextAlignment(.center)
-                        .frame(width: size + 6, height: 26, alignment: .top)
+                    Text(device.name).font(.caption2).lineLimit(1).minimumScaleFactor(0.4)
+                        .frame(width: size + 6)
                 }
             }
         }

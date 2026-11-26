@@ -22,18 +22,19 @@ extension DashboardCard {
 extension DashboardCard.Kind {
     var minSize: (width: Int, height: Int) {
         switch self {
-        case .item: (2, 1)
+        case .item, .group: (2, 1)
         case .status: (2, 1)
-        case .room, .camera: (2, 2)
+        case .room, .camera, .collection, .folder: (2, 2)
         }
     }
 
     /// Wide screens get roomier first cards: a full-width status, rooms two to a row.
     func defaultSize(columns: Int) -> (width: Int, height: Int) {
         switch self {
-        case .item: (2, 1)
+        case .item, .group: (2, 1)
         case .status: (columns, 1)
-        case .room: columns > 4 ? (4, 2) : (2, 2)
+        case .room, .collection: columns > 4 ? (4, 2) : (2, 2)
+        case .folder: (2, 2)
         case .camera: columns > 4 ? (4, 3) : (2, 2)
         }
     }

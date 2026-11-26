@@ -75,6 +75,11 @@ struct MediaButton: Identifiable {
         (["volume up", "lauter", "louder"], "speaker.plus.fill"),
     ]
 
+    /// The player symbol for a switch named Play, Mute…; nil for everything else.
+    static func icon(for device: Device) -> String? {
+        remote(for: [device]).first?.icon
+    }
+
     static func remote(for members: [Device]) -> [MediaButton] {
         members.compactMap { device in
             guard device.kind == .plug || device.kind == .light else { return nil }

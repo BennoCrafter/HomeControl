@@ -1,19 +1,20 @@
 import SwiftUI
 
-/// A room: its name, what's on, and a quick toggle per item.
+/// A room, group or collection: its name, what's on, and a quick toggle per item.
 struct RoomCard: View {
-    let room: String
+    let title: String
+    let icon: String
+    let items: [Device]
     let large: Bool
     let open: () -> Void
 
     @Environment(HomeStore.self) private var store
     @Environment(\.itemPrefs) private var prefs
-    @Environment(\.roomIcons) private var roomIcons
     @Environment(\.tileOpacity) private var tileOpacity
     @State private var toggles = 0
 
     private var devices: [Device] {
-        store.devices.filter { $0.room == room && !(prefs[$0.id]?.isHidden ?? false) }
+        items.map { store.binding(for: $0).wrappedValue }.filter { !(prefs[$0.id]?.isHidden ?? false) }
     }
 
     var body: some View {
@@ -21,13 +22,13 @@ struct RoomCard: View {
         VStack(alignment: .leading, spacing: 10) {
             Button(action: open) {
                 HStack(spacing: 10) {
-                    Image(systemName: roomIcons[room] ?? ContentView.icon(forRoom: room))
+                    Image(systemName: icon)
                         .font(.title3.weight(.semibold))
                         .foregroundStyle(Color.accentColor)
                         .frame(width: 34, height: 34)
                         .background(Color.accentColor.opacity(0.15), in: .rect(cornerRadius: 10))
                     VStack(alignment: .leading, spacing: 0) {
-                        Text(room).font(.headline).lineLimit(1)
+                        Text(title).font(.headline).lineLimit(1)
                         Text(active == 0 ? "All off" : "\(active) on")
                             .font(.caption)
                             .foregroundStyle(.secondary)
@@ -67,7 +68,7 @@ struct RoomCard: View {
             toggles += 1
         } label: {
             VStack(spacing: 4) {
-                Image(systemName: device.icon(prefs))
+                Image(systemName: MediaButton.icon(for: device) ?? device.icon(prefs))
                     .font(.system(size: size * 0.4, weight: .semibold))
                     .contentTransition(.symbolEffect(.replace))
                     .foregroundStyle(device.isActive ? AnyShapeStyle(.white) : AnyShapeStyle(.secondary))
@@ -141,5 +142,39 @@ struct StatusCard: View {
         .buttonStyle(PressScale(scale: 0.9))
         .fixedSize()
         .animation(.spring(duration: 0.3), value: text)
+    }
+}
+
+/// A folder of cards, drawn like a Home Screen folder: the icons of what's inside.
+struct FolderCard: View {
+    let name: String
+    let icons: [(symbol: String, tint: Color)]
+    @Environment(\.tileOpacity) private var tileOpacity
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            GeometryReader { geometry in
+                let size = min((geometry.size.width - 16) / 3, (geometry.size.height - 16) / 3)
+                LazyVGrid(columns: Array(repeating: GridItem(.fixed(size), spacing: 8), count: 3), alignment: .leading, spacing: 8) {
+                    ForEach(icons.prefix(9).indices, id: \.self) { index in
+                        Image(systemName: icons[index].symbol)
+                            .font(.system(size: size * 0.45, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .frame(width: size, height: size)
+                            .background(icons[index].tint.gradient, in: .rect(cornerRadius: size * 0.28, style: .continuous))
+                    }
+                }
+            }
+            HStack {
+                Text(name).font(.headline).lineLimit(1)
+                Spacer(minLength: 0)
+                Text("\(icons.count)").font(.caption.bold()).foregroundStyle(.secondary).contentTransition(.numericText())
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(.ultraThinMaterial.opacity(tileOpacity), in: .rect(cornerRadius: 24, style: .continuous))
+        .background(Color(.secondarySystemGroupedBackground).opacity(tileOpacity * 0.5), in: .rect(cornerRadius: 24, style: .continuous))
+        .overlay { RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(.white.opacity(0.12)) }
     }
 }

@@ -4,7 +4,19 @@ import SwiftUI
 /// The home at a glance, arranged freely: cards on a grid, held to move, resized from the corner.
 /// 4 columns on a phone, 8 on wider screens; the same layout fits itself to both.
 struct DashboardView: View {
+    /// The folder shown; nil is the dashboard itself.
+    var folder: DeviceGroup?
     @Environment(HomeStore.self) private var store
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.itemPrefs) private var prefs
+    @Environment(\.roomIcons) private var roomIcons
+    @Namespace private var zoom
+    @State private var openedFolder: DeviceGroup?
+    @State private var openedCollection: DeviceGroup?
+    @State private var editingCollection: DeviceGroup?
+    @State private var addingCollection = false
+    @State private var namingFolder = false
+    @State private var newFolderName = ""
     @FetchAll private var allCards: [DashboardCard]
     @State private var isEditing = false
     @State private var drag: ActiveDrag?
@@ -28,7 +40,7 @@ struct DashboardView: View {
 
     /// This screen size's layout, of the chosen profile.
     private var cards: [DashboardCard] {
-        allCards.filter { $0.homeID == homeID && $0.columns == columns && $0.memberID == profiles.selected && isValid($0) }
+        allCards.filter { $0.homeID == homeID && $0.columns == columns && $0.memberID == profiles.selected && $0.folderID == folder?.id && isValid($0) }
     }
 
     @State private var profiles = Profiles(homeID: "")
@@ -48,6 +60,37 @@ struct DashboardView: View {
         case .item, .camera: store.devices.contains { $0.id.uuidString == card.ref }
         case .room: store.rooms.contains(card.ref)
         case .status: true
+        case .group, .collection, .folder: Int(card.ref).flatMap(store.group(id:)) != nil
+        }
+    }
+
+    private func group(_ card: DashboardCard) -> DeviceGroup? {
+        Int(card.ref).flatMap(store.group(id:))
+    }
+
+    /// A room's items, without those a group stands in for.
+    private func items(in room: String) -> [Device] {
+        let grouped = store.groupedIDs
+        return store.devices.filter { $0.room == room && !grouped.contains($0.id) }
+    }
+
+    private func items(of group: DeviceGroup) -> [Device] {
+        let all = store.devices + store.groupDevices
+        return group.memberIDs.compactMap { id in all.first { $0.id == id } }
+    }
+
+    /// What a folder shows of the cards inside it.
+    private func icon(for card: DashboardCard) -> (symbol: String, tint: Color) {
+        let device = (store.devices + store.groupDevices).first { $0.id.uuidString == card.ref }
+        switch card.kind {
+        case .item, .camera: return (device?.icon(prefs) ?? "questionmark", device?.kind.tint ?? .gray)
+        case .room: return (roomIcons[card.ref] ?? ContentView.icon(forRoom: card.ref), .accentColor)
+        case .status: return ("gauge.with.dots.needle.67percent", .orange)
+        case .group:
+            let device = group(card).flatMap { group in store.groupDevices.first { $0.id == group.deviceID } }
+            return (device?.icon ?? "square.stack.3d.up.fill", device?.kind.tint ?? .purple)
+        case .collection: return (group(card)?.icon ?? "square.grid.2x2.fill", .pink)
+        case .folder: return ("folder.fill", .blue)
         }
     }
 
@@ -94,7 +137,7 @@ struct DashboardView: View {
                 #endif
             }
             .background(HomeBackground())
-            .navigationTitle(store.homeName)
+            .navigationTitle(folder?.name ?? store.homeName)
             .navigationBarTitleDisplayMode(.inline)
             .sheet(item: $selected) { DeviceDetailView(device: $0).environment(store) }
             .sheet(item: Binding(get: { openedRoom.map(IdentifiedString.init) }, set: { openedRoom = $0?.id })) { room in
@@ -103,6 +146,33 @@ struct DashboardView: View {
                         .toolbar { Button("Done") { openedRoom = nil } }
                 }
                 .environment(store)
+            }
+            .fullScreenCover(item: $openedFolder) { folder in
+                DashboardView(folder: folder)
+                    .environment(store)
+                    .navigationTransition(.zoom(sourceID: folder.id, in: zoom))
+            }
+            .sheet(item: $openedCollection) { collection in
+                NavigationStack {
+                    RoomView(title: collection.name, devices: items(of: collection), showRoom: true)
+                        .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { openedCollection = nil } } }
+                }
+                .environment(store)
+            }
+            .sheet(item: $editingCollection) { GroupEditor(kind: .collection, existing: $0).environment(store) }
+            .sheet(isPresented: $addingCollection) {
+                GroupEditor(kind: .collection) { id in add(.collection, ref: "\(id)", columns: columns) }.environment(store)
+            }
+            .alert("New Folder", isPresented: $namingFolder) {
+                TextField("Name", text: $newFolderName)
+                Button("Add") {
+                    let name = newFolderName.trimmingCharacters(in: .whitespaces)
+                    newFolderName = ""
+                    if let id = Groups.save(DeviceGroup.Draft(homeID: homeID, kind: .folder, name: name.isEmpty ? String(localized: "Folder") : name)) {
+                        add(.folder, ref: "\(id)", columns: columns)
+                    }
+                }
+                Button("Cancel", role: .cancel) { newFolderName = "" }
             }
             .confirmationDialog("Reset the dashboard?", isPresented: $confirmingReset, titleVisibility: .visible) {
                 Button("Reset", role: .destructive) { reset() }
@@ -238,12 +308,41 @@ struct DashboardView: View {
                     DeviceTile(device: device, showRoom: true) { selected = device }
                 }
             case .room:
-                RoomCard(room: card.ref, large: card.height > 2 || card.width >= 4) { openedRoom = card.ref }
+                RoomCard(title: card.ref, icon: roomIcons[card.ref] ?? ContentView.icon(forRoom: card.ref), items: items(in: card.ref),
+                         large: card.height > 2 || card.width >= 4) { openedRoom = card.ref }
             case .status:
                 StatusCard(compact: card.width < 4)
             case .camera:
                 if let device = store.devices.first(where: { $0.id.uuidString == card.ref }) {
                     CameraCard(device: device)
+                }
+            case .group:
+                // Small, it's a tile like any item; bigger, every member gets a button.
+                if let group = group(card), let device = store.groupDevices.first(where: { $0.id == group.deviceID }) {
+                    if card.height == 1 {
+                        DeviceTile(device: device, showRoom: false) { selected = device }
+                    } else {
+                        RoomCard(title: group.name, icon: device.icon, items: store.members(of: group),
+                                 large: card.height > 2 || card.width >= 4) { selected = device }
+                    }
+                }
+            case .collection:
+                if let collection = group(card) {
+                    RoomCard(title: collection.name, icon: collection.icon ?? "square.grid.2x2.fill", items: items(of: collection),
+                             large: card.height > 2 || card.width >= 4) { openedCollection = collection }
+                        .contextMenu {
+                            Button("Edit Collection…", systemImage: "pencil") { editingCollection = collection }
+                        }
+                }
+            case .folder:
+                if let folder = group(card) {
+                    let inside = allCards.filter { $0.folderID == folder.id && $0.columns == columns && $0.memberID == profiles.selected && isValid($0) }
+                    Button { openedFolder = folder } label: {
+                        FolderCard(name: folder.name, icons: inside.sorted { ($0.y, $0.x) < ($1.y, $1.x) }.map(icon(for:)))
+                    }
+                    .buttonStyle(PressScale(scale: 0.95))
+                    .matchedTransitionSource(id: folder.id, in: zoom)
+                    .sensoryFeedback(.impact(weight: .light), trigger: openedFolder != nil)
                 }
             }
         }
@@ -295,7 +394,13 @@ struct DashboardView: View {
             }
             ToolbarItem(placement: .topBarTrailing) { addMenu(columns: columns) }
         }
-        ToolbarItem(placement: .topBarLeading) { if !isEditing { profileMenu } }
+        ToolbarItem(placement: .topBarLeading) {
+            if folder != nil {
+                Button("Close", systemImage: "chevron.down") { dismiss() }
+            } else if !isEditing {
+                profileMenu
+            }
+        }
         ToolbarItem(placement: .topBarTrailing) {
             Button(isEditing ? "Done" : "Edit") {
                 withAnimation(.spring(duration: 0.35, bounce: 0.3)) { isEditing.toggle() }
@@ -395,6 +500,15 @@ struct DashboardView: View {
                     }
                 }
             }
+            let groups = store.groups(.group)
+            if !groups.isEmpty {
+                Menu("Group", systemImage: "square.stack.3d.up") {
+                    ForEach(groups) { group in
+                        Button(group.name) { add(.group, ref: "\(group.id)", columns: columns) }
+                            .disabled(cards.contains { $0.kind == .group && $0.ref == "\(group.id)" })
+                    }
+                }
+            }
             let cameras = store.devices.filter { $0.kind == .camera }
             if !cameras.isEmpty {
                 Menu("Camera", systemImage: "web.camera") {
@@ -402,6 +516,13 @@ struct DashboardView: View {
                         Button(camera.name) { add(.camera, ref: camera.id.uuidString, columns: columns) }
                             .disabled(cards.contains { $0.ref == camera.id.uuidString })
                     }
+                }
+            }
+            Section {
+                Button("New Collection…", systemImage: "square.grid.2x2") { addingCollection = true }
+                // One level deep: no folders in folders.
+                if folder == nil {
+                    Button("New Folder…", systemImage: "folder.badge.plus") { namingFolder = true }
                 }
             }
         } label: {
@@ -419,7 +540,7 @@ struct DashboardView: View {
             try? database.write { db in
                 try DashboardCard.insert {
                     DashboardCard.Draft(homeID: homeID, kind: kind, ref: ref, x: spot.x, y: spot.y, width: spot.width, height: spot.height,
-                                        columns: columns, memberID: profiles.selected)
+                                        columns: columns, memberID: profiles.selected, folderID: folder?.id)
                 }.execute(db)
             }
         }
@@ -428,6 +549,11 @@ struct DashboardView: View {
     private func remove(_ card: DashboardCard) {
         @Dependency(\.defaultDatabase) var database
         try? database.write { db in try DashboardCard.find(card.id).delete().execute(db) }
+        // A collection or folder lives in its card; gone once no layout shows it any more.
+        if card.kind == .collection || card.kind == .folder, let id = Int(card.ref),
+           !allCards.contains(where: { $0.id != card.id && $0.kind == card.kind && $0.ref == card.ref }) {
+            Groups.delete(id)
+        }
         save(DashboardEngine.compact(committed(columns: columns).filter { $0.key != card.id }))
     }
 
@@ -450,8 +576,9 @@ struct DashboardView: View {
     private func reset() {
         @Dependency(\.defaultDatabase) var database
         let (columns, member) = (columns, profiles.selected)
+        let ids = allCards.filter { $0.homeID == homeID && $0.columns == columns && $0.memberID == member && $0.folderID == folder?.id }.map(\.id)
         try? database.write { db in
-            try DashboardCard.where { $0.homeID.eq(homeID) && $0.columns.eq(columns) && $0.memberID.eq(member) }.delete().execute(db)
+            try DashboardCard.where { $0.id.in(ids) }.delete().execute(db)
         }
         UserDefaults.standard.removeObject(forKey: seededKey)
         seedIfNeeded(columns: columns)
@@ -462,7 +589,7 @@ struct DashboardView: View {
     /// A first layout per home: the status, then every room. Only once, so an emptied dashboard stays empty.
     private func seedIfNeeded(columns: Int) {
         let key = seededKey
-        guard !homeID.isEmpty, !store.devices.isEmpty, !UserDefaults.standard.bool(forKey: key) else { return }
+        guard folder == nil, !homeID.isEmpty, !store.devices.isEmpty, !UserDefaults.standard.bool(forKey: key) else { return }
         UserDefaults.standard.set(true, forKey: key)
         add(.status, ref: "", columns: columns)
         for room in store.rooms {

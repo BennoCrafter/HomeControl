@@ -35,7 +35,7 @@ struct ItemPref: Identifiable, Hashable, Sendable {
 @Table("cards")
 struct DashboardCard: Identifiable, Hashable, Sendable {
     enum Kind: String, Codable, QueryBindable, CaseIterable {
-        case item, room, status, camera
+        case item, room, status, camera, group, collection, folder
     }
 
     let id: Int

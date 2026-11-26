@@ -484,6 +484,16 @@ extension HomeStore {
         for _ in 0 ..< 50 where !(devices + groupDevices).contains(where: { $0.id == id }) {
             try await Task.sleep(for: .milliseconds(100))
         }
+        // Launched for a widget tap, HomeKit hands over the accessories before reading them: decided on that, an
+        // "off" light would look off already and the tap would be dropped. Read first.
+        let group = group(for: id)
+        for member in group.map(members(of:)) ?? devices.filter({ $0.id == id }) {
+            guard let service = services[member.id] else { continue }
+            for characteristic in service.characteristics where member.kind.characteristicTypes.contains(characteristic.characteristicType) {
+                try? await characteristic.readValue()
+            }
+            refresh(service)
+        }
         guard let device = (devices + groupDevices).first(where: { $0.id == id }), device.isActive != active else { return }
         for write in update(device.toggled()) {
             try await write.value

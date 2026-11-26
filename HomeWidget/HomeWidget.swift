@@ -8,6 +8,7 @@ struct HomeWidgetBundle: WidgetBundle {
         AccessoryWidget()
         RoomWidget()
         StatusWidget()
+        CameraWidget()
         AccessoryControl()
     }
 }
@@ -106,6 +107,8 @@ private struct AccessoryWidgetView: View {
                 ContentUnavailableView("Open HomeControl", systemImage: "house")
             }
         }
+        // The icon switches; anywhere else opens the item in the app.
+        .widgetURL(device.map { WidgetLink.item($0.id) })
         .containerBackground(for: .widget) {
             if let device, device.isActive {
                 LinearGradient(colors: [device.kind.tint.opacity(0.35), device.kind.tint.opacity(0.12)], startPoint: .top, endPoint: .bottom)
@@ -207,6 +210,7 @@ private struct RoomWidgetView: View {
             }
             .frame(maxHeight: .infinity)
         }
+        .widgetURL(WidgetLink.room(entry.room))
     }
 }
 
@@ -299,5 +303,112 @@ struct AccessoryControl: ControlWidget {
         var intent = SetDeviceIntent()
         intent.device = device
         return intent
+    }
+}
+
+// MARK: - Camera
+
+enum WidgetLink {
+    static func item(_ id: UUID) -> URL { URL(string: "homecontrol://item/\(id.uuidString)")! }
+    static func room(_ name: String) -> URL { URL(string: "homecontrol://room")!.appending(path: name) }
+}
+
+struct CameraEntity: AppEntity {
+    let id: String
+    let name: String
+
+    static let typeDisplayRepresentation: TypeDisplayRepresentation = "Camera"
+    static let defaultQuery = CameraQuery()
+
+    var displayRepresentation: DisplayRepresentation { DisplayRepresentation(title: "\(name)") }
+}
+
+struct CameraQuery: EntityQuery {
+    @MainActor func entities(for identifiers: [String]) async throws -> [CameraEntity] {
+        try await suggestedEntities().filter { identifiers.contains($0.id) }
+    }
+
+    @MainActor func suggestedEntities() async throws -> [CameraEntity] {
+        (WidgetData.snapshot()?.devices ?? []).filter { $0.kind == .camera }.map { CameraEntity(id: $0.id.uuidString, name: $0.name) }
+    }
+}
+
+struct SelectCameraIntent: WidgetConfigurationIntent {
+    static let title: LocalizedStringResource = "Choose Camera"
+    @Parameter(title: "Camera") var camera: CameraEntity?
+}
+
+struct CameraEntry: TimelineEntry {
+    var date = Date.now
+    var name: String?
+    var id: UUID?
+    var image: UIImage?
+    var takenAt: Date?
+}
+
+struct CameraProvider: AppIntentTimelineProvider {
+    func placeholder(in _: Context) -> CameraEntry { CameraEntry(name: "Front Yard") }
+    func snapshot(for intent: SelectCameraIntent, in context: Context) async -> CameraEntry {
+        context.isPreview ? placeholder(in: context) : entry(intent)
+    }
+
+    // The app saves a new still while it's open; check back now and then.
+    func timeline(for intent: SelectCameraIntent, in _: Context) async -> Timeline<CameraEntry> {
+        Timeline(entries: [entry(intent)], policy: .after(.now.addingTimeInterval(15 * 60)))
+    }
+
+    private func entry(_ intent: SelectCameraIntent) -> CameraEntry {
+        let cameras = (WidgetData.snapshot()?.devices ?? []).filter { $0.kind == .camera }
+        guard let camera = cameras.first(where: { $0.id.uuidString == intent.camera?.id }) ?? cameras.first else { return CameraEntry() }
+        let still = WidgetData.cameraImage(for: camera.id)
+        return CameraEntry(name: camera.name, id: camera.id, image: still.flatMap { UIImage(data: $0.data) }, takenAt: still?.date)
+    }
+}
+
+/// The camera's latest still, as the app last saw it; tap for the live picture.
+struct CameraWidget: Widget {
+    var body: some WidgetConfiguration {
+        AppIntentConfiguration(kind: "Camera", intent: SelectCameraIntent.self, provider: CameraProvider()) { entry in
+            CameraWidgetView(entry: entry)
+                .containerBackground(for: .widget) {
+                    if let image = entry.image {
+                        Image(uiImage: image).resizable().scaledToFill()
+                    } else {
+                        LinearGradient(colors: [.indigo, .blue, .teal], startPoint: .topLeading, endPoint: .bottomTrailing)
+                    }
+                }
+        }
+        .configurationDisplayName("Camera")
+        .description("The camera's latest picture. Opens the live view.")
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+        .contentMarginsDisabled()
+    }
+}
+
+private struct CameraWidgetView: View {
+    let entry: CameraEntry
+
+    var body: some View {
+        ZStack(alignment: .bottomLeading) {
+            LinearGradient(colors: [.clear, .black.opacity(0.55)], startPoint: .center, endPoint: .bottom)
+            if entry.image == nil {
+                Image(systemName: "web.camera.fill").font(.largeTitle).foregroundStyle(.white.opacity(0.6))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            HStack {
+                Text(entry.name ?? String(localized: "No Camera")).font(.headline).lineLimit(1).minimumScaleFactor(0.6)
+                Spacer(minLength: 4)
+                if let takenAt = entry.takenAt {
+                    Text(takenAt, style: .relative)
+                        .font(.caption.bold().monospacedDigit())
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(.black.opacity(0.35), in: .capsule)
+                }
+            }
+            .foregroundStyle(.white)
+            .padding(14)
+        }
+        .widgetURL(entry.id.map(WidgetLink.item))
     }
 }

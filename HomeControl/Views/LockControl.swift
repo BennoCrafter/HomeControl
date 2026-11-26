@@ -85,16 +85,23 @@ struct ContactView: View {
             ZStack {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .fill(device.isContactOpen ? device.kind.tint.opacity(0.25) : Color.secondary.opacity(0.12))
+                // The leaf, hinged on the left; perspective kept low so it stays inside the frame.
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(.quaternary)
-                    .overlay(alignment: .trailing) {
-                        Circle().fill(.secondary).frame(width: 12).padding(.trailing, 14)
+                    .fill(Color(.systemGray4).gradient)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .strokeBorder(.black.opacity(0.08), lineWidth: 2)
+                            .padding(14)
                     }
-                    .rotation3DEffect(.degrees(device.isContactOpen ? -62 : 0), axis: (0, 1, 0), anchor: .leading, perspective: 0.5)
-                    .shadow(color: .black.opacity(device.isContactOpen ? 0.25 : 0), radius: 10, x: 8)
+                    .overlay(alignment: .trailing) {
+                        Capsule().fill(Color(.systemGray)).frame(width: 8, height: 26).padding(.trailing, 12)
+                    }
+                    .rotation3DEffect(.degrees(device.isContactOpen ? -58 : 0), axis: (0, 1, 0), anchor: .leading, perspective: 0.25)
+                    .shadow(color: .black.opacity(device.isContactOpen ? 0.2 : 0), radius: 8, x: 6)
             }
             .frame(width: 130, height: 210)
             .padding(10)
+            .clipShape(.rect)
             .background(.quinary, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             .animation(.spring(duration: 0.7, bounce: 0.35), value: device.isContactOpen)
 

@@ -21,16 +21,17 @@ struct LevelControl: View {
     @AppStorage("controlStyle.light") private var lightStyle: ControlStyle = .dial
     @AppStorage("controlStyle.shutter") private var shutterStyle: ControlStyle = .pill
     @State private var draft: Double?
-    @State private var dragStart: Double?
     @State private var lastSent = Date.distantPast
-    @State private var lastAngle: Double?
     @State private var jumps = 0
     /// The level as drawn. Animated locally so taps spring immediately, independent of HomeKit round-trips.
     @State private var displayed: Double?
     @State private var lastLocalChange = Date.distantPast
     @State private var springTask: Task<Void, Never>?
+    @State private var dialAreaWidth: CGFloat = 0
 
     private static let spring = Spring(duration: 0.55, bounce: 0.35)
+    /// Drags may start this far outside the control, and anywhere across the row, so the finger needn't hit it.
+    private static let dragSlop: CGFloat = 40
 
     private var shown: Double { draft ?? displayed ?? level }
 
@@ -72,7 +73,7 @@ struct LevelControl: View {
             @unknown default: break
             }
         }
-        .accessibilityAction { onTap() }
+        .accessibilityAction { toggle() }
     }
 
     private func drag(to value: Double) {
@@ -85,6 +86,13 @@ struct LevelControl: View {
             lastSent = .now
             level = value
         }
+    }
+
+    /// On/off tap: animate here, since `onChange` drops level changes right after a drag as echoes.
+    private func toggle() {
+        onTap()
+        lastLocalChange = .now
+        animate(to: level)
     }
 
     /// Tap on a spot: springs straight to that level.
@@ -121,8 +129,6 @@ struct LevelControl: View {
             lastLocalChange = .now
         }
         draft = nil
-        dragStart = nil
-        lastAngle = nil
     }
 
     private var badge: some View {
@@ -156,24 +162,25 @@ struct LevelControl: View {
                         .frame(height: max(0, height * (1 - shown)))
                         .frame(maxHeight: .infinity, alignment: .top)
                 }
-                Button(action: onTap) { badge }
+                Button(action: toggle) { badge }
                     .buttonStyle(.plain)
                     .frame(maxHeight: .infinity)
             }
             .clipShape(.rect(cornerRadius: 40))
             .contentShape(.rect(cornerRadius: 40))
             .gesture(SpatialTapGesture().onEnded { tap in jump(to: 1 - tap.location.y / height) })
-            .highPriorityGesture(
-                DragGesture(minimumDistance: 4)
-                    .onChanged { gesture in
-                        let start = dragStart ?? shown
-                        dragStart = start
-                        drag(to: start - gesture.translation.height / height)
-                    }
-                    .onEnded { _ in endDrag() }
-            )
         }
         .frame(width: 130, height: 300)
+        .padding(.vertical, Self.dragSlop)
+        .frame(maxWidth: .infinity)
+        .contentShape(.rect)
+        .highPriorityGesture(
+            DragGesture(minimumDistance: 4)
+                .onChanged { gesture in
+                    drag(to: 1 - (gesture.location.y - Self.dragSlop) / 300) // the fill edge follows the finger
+                }
+                .onEnded { _ in endDrag() }
+        )
     }
 
     // MARK: Dial
@@ -184,6 +191,11 @@ struct LevelControl: View {
         Circle()
             .trim(from: 0, to: 0.75 * min(max(fraction, 0), 1))
             .rotation(.degrees(135))
+    }
+
+    /// Level under a point relative to the dial centre; below 0 / above 1 inside the bottom gap.
+    private func dialValue(dx: CGFloat, dy: CGFloat) -> Double {
+        (atan2(dx, -dy) * 180 / .pi + 135) / 270
     }
 
     private var dial: some View {
@@ -207,7 +219,7 @@ struct LevelControl: View {
                 }
                 .offset(y: -radius)
                 .rotationEffect(.radians(angle)) // rotating (not offsetting) keeps the knob on the arc while animating
-            Button(action: onTap) { badge }
+            Button(action: toggle) { badge }
                 .buttonStyle(.plain)
         }
         .padding(lineWidth / 2)
@@ -216,21 +228,22 @@ struct LevelControl: View {
         .gesture(SpatialTapGesture().onEnded { tap in
             let dx = tap.location.x - size / 2, dy = tap.location.y - size / 2
             guard hypot(dx, dy) > radius * 0.4 else { return } // the centre is the toggle button
-            jump(to: (atan2(dx, -dy) * 180 / .pi + 135) / 270)
+            jump(to: dialValue(dx: dx, dy: dy))
         })
+        .padding(.vertical, Self.dragSlop)
+        .frame(maxWidth: .infinity)
+        .contentShape(.rect)
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { dialAreaWidth = $0 }
         .highPriorityGesture(
             DragGesture(minimumDistance: 4)
                 .onChanged { gesture in
-                    let dx = gesture.location.x - size / 2, dy = gesture.location.y - size / 2
+                    let dx = gesture.location.x - dialAreaWidth / 2, dy = gesture.location.y - (Self.dragSlop + size / 2)
                     guard hypot(dx, dy) > radius * 0.4 else { return }
-                    // Relative turning: follow how far the finger rotates, wherever it starts, so the knob never jumps or gets stuck.
-                    let angle = atan2(dx, -dy) * 180 / .pi
-                    if let lastAngle {
-                        var delta = angle - lastAngle
-                        if delta > 180 { delta -= 360 } else if delta < -180 { delta += 360 }
-                        drag(to: shown + delta / 270)
-                    }
-                    lastAngle = angle
+                    // The knob points where the finger is; crossing the bottom gap must not flip between 0 and 1.
+                    // Only inside the gap; elsewhere (e.g. sweeping across the centre) big jumps are intended.
+                    let raw = dialValue(dx: dx, dy: dy), value = min(max(raw, 0), 1)
+                    if raw != value, let draft, abs(value - draft) > 0.5 { return }
+                    drag(to: value)
                 }
                 .onEnded { _ in endDrag() }
         )

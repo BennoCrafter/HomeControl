@@ -36,7 +36,11 @@ final class HomeStore: NSObject {
     private(set) var access = HomeAccess.notRequested
     private(set) var homes: [HomeOption] = [.demo]
     /// The home's id in this app's data: HomeKit's own, or the shared one when a family member shared theirs.
-    private(set) var currentHomeID: String?
+    private(set) var currentHomeID: String? {
+        didSet { if let currentHomeID { UserDefaults.standard.set(currentHomeID, forKey: Self.lastHomeKey) } }
+    }
+    /// The home shown last time, for its look while HomeKit is still loading.
+    static let lastHomeKey = "lastHomeID"
     /// HomeKit's id of the home on this device; differs per person.
     private(set) var homeKitID: String?
     var message: String? = "Allow Home access in Settings to see your accessories."

@@ -35,7 +35,9 @@ struct ContentView: View {
     private var homeID: String { store.currentHomeID ?? "" }
 
     private var appearance: Appearance {
-        appearances.first { $0.id == homeID } ?? Appearance(id: homeID)
+        // Until HomeKit has loaded the home, last time's: otherwise the default background flashes first.
+        let id = store.currentHomeID ?? UserDefaults.standard.string(forKey: HomeStore.lastHomeKey) ?? ""
+        return appearances.first { $0.id == id } ?? Appearance(id: id)
     }
 
     /// Pinned first, then the user's order, then HomeKit's.

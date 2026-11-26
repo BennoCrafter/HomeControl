@@ -118,6 +118,27 @@ struct AppearanceSection: View {
                 }
                 .padding(.vertical, 6)
             }
+            // On the row, not the Section: a Section hands its modifiers to every row, and two sheets fight.
+            .sensoryFeedback(.selection, trigger: appearance.background)
+            .sheet(isPresented: $editingGradient) {
+                GradientEditor(style: appearance.gradient) { style in
+                    save {
+                        $0.gradient = style
+                        $0.background = "custom"
+                    }
+                }
+            }
+            .onChange(of: photo) {
+                Task {
+                    guard let data = try? await photo?.loadTransferable(type: Data.self), let image = UIImage(data: data) else { return }
+                    // Stored downscaled: a 48 MP photo would bloat the database for a blurred backdrop.
+                    let small = image.preparingThumbnail(of: CGSize(width: 1600, height: 1600 * image.size.height / max(image.size.width, 1)))
+                    save {
+                        $0.photo = small?.jpegData(compressionQuality: 0.8)
+                        $0.background = "photo"
+                    }
+                }
+            }
             VStack(alignment: .leading) {
                 LabeledContent("Tiles", value: (opacity ?? appearance.tileOpacity).formatted(.percent.precision(.fractionLength(0))))
                 Slider(value: Binding(get: { opacity ?? appearance.tileOpacity }, set: { opacity = $0 }), in: 0.1 ... 1) { editing in
@@ -131,26 +152,6 @@ struct AppearanceSection: View {
             Text("Appearance")
         } footer: {
             Text("The background of this home, and how solid the tiles are on top of it.")
-        }
-        .sensoryFeedback(.selection, trigger: appearance.background)
-        .sheet(isPresented: $editingGradient) {
-            GradientEditor(style: appearance.gradient) { style in
-                save {
-                    $0.gradient = style
-                    $0.background = "custom"
-                }
-            }
-        }
-        .onChange(of: photo) {
-            Task {
-                guard let data = try? await photo?.loadTransferable(type: Data.self), let image = UIImage(data: data) else { return }
-                // Stored downscaled: a 48 MP photo would bloat the database for a blurred backdrop.
-                let small = image.preparingThumbnail(of: CGSize(width: 1600, height: 1600 * image.size.height / max(image.size.width, 1)))
-                save {
-                    $0.photo = small?.jpegData(compressionQuality: 0.8)
-                    $0.background = "photo"
-                }
-            }
         }
     }
 

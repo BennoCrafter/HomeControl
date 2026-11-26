@@ -18,6 +18,8 @@ struct HomeOption: Identifiable, Hashable {
 /// Mirrors the selected Apple Home via HomeKit, or the built-in demo home.
 @Observable
 final class HomeStore: NSObject {
+    static let shared = HomeStore()
+
     private(set) var devices: [Device] = [] {
         didSet {
             let old = Dictionary(oldValue.map { ($0.id, $0.currentState) }) { first, _ in first }
@@ -195,6 +197,16 @@ final class HomeStore: NSObject {
 }
 
 extension HomeStore {
+    /// From a widget or control: waits for HomeKit to load the home when the app was launched for it.
+    func set(_ id: UUID, active: Bool) async throws {
+        reconnect()
+        for _ in 0 ..< 50 where !devices.contains(where: { $0.id == id }) {
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        guard let device = devices.first(where: { $0.id == id }), device.isActive != active else { return }
+        update(device.toggled())
+    }
+
     /// The widgets read the home from here; reloaded at most every few seconds while sliders move.
     private func saveSnapshot() {
         guard let currentHomeID else { return }

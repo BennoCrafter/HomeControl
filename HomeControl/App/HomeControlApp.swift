@@ -3,7 +3,7 @@ import SwiftUI
 
 @main
 struct HomeControlApp: App {
-    @State private var store = HomeStore()
+    @State private var store = HomeStore.shared
     @State private var showingSettings = false
 
     init() {
@@ -16,6 +16,11 @@ struct HomeControlApp: App {
             // Preferences are a nicety: without them the app still controls the home.
             logger.error("Opening the database failed: \(error)")
         }
+        setUpWidgetActions()
+    }
+
+    private func setUpWidgetActions() {
+        DeviceActions.setOn = { id, active in try await HomeStore.shared.set(id, active: active) }
     }
 
     var body: some Scene {

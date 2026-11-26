@@ -1,5 +1,7 @@
-import SwiftUI
 import HomeKit
+import SQLiteData
+import SwiftUI
+import WidgetKit
 
 enum HomeAccess {
     case notRequested, pending, authorized, denied
@@ -16,7 +18,9 @@ struct HomeOption: Identifiable, Hashable {
 /// Mirrors the selected Apple Home via HomeKit, or the built-in demo home.
 @Observable
 final class HomeStore: NSObject {
-    private(set) var devices: [Device] = []
+    private(set) var devices: [Device] = [] {
+        didSet { saveSnapshot() }
+    }
     private(set) var homeName = "Home"
     private(set) var access = HomeAccess.notRequested
     private(set) var homes: [HomeOption] = [.demo]
@@ -173,6 +177,21 @@ final class HomeStore: NSObject {
         default: break
         }
         devices[i] = device
+    }
+}
+
+extension HomeStore {
+    /// The widgets read the home from here; reloaded at most every few seconds while sliders move.
+    private func saveSnapshot() {
+        guard let currentHomeID else { return }
+        @Dependency(\.defaultDatabase) var database
+        do {
+            let snapshot = try Snapshot(id: currentHomeID, homeName: homeName, devicesJSON: JSONEncoder().encode(devices), updatedAt: .now)
+            try database.write { db in try Snapshot.upsert { snapshot }.execute(db) }
+        } catch {
+            logger.error("Saving the widget snapshot failed: \(error)")
+        }
+        WidgetCenter.shared.reloadAllTimelines()
     }
 }
 

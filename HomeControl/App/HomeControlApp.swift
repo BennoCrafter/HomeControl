@@ -1,9 +1,19 @@
+import SQLiteData
 import SwiftUI
 
 @main
 struct HomeControlApp: App {
     @State private var store = HomeStore()
     @State private var showingSettings = false
+
+    init() {
+        do {
+            try prepareDependencies { $0.defaultDatabase = try Schema.database() }
+        } catch {
+            // Preferences are a nicety: without them the app still controls the home.
+            logger.error("Opening the database failed: \(error)")
+        }
+    }
 
     var body: some Scene {
         WindowGroup {

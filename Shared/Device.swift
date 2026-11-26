@@ -1,6 +1,6 @@
 import SwiftUI
 
-enum DeviceKind {
+enum DeviceKind: String, Codable, CaseIterable {
     case light, thermostat, lock, garage, plug, blinds, contact
 
     /// Sensors only report state; everything else can be switched.
@@ -20,7 +20,7 @@ enum DeviceKind {
 }
 
 /// Snapshot of one controllable service, independent of HomeKit types.
-struct Device: Identifiable {
+struct Device: Identifiable, Codable, Hashable {
     let id: UUID
     var name: String
     var accessoryName: String

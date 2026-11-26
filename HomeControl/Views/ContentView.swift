@@ -1,3 +1,4 @@
+import SQLiteData
 import SwiftUI
 
 struct ContentView: View {
@@ -5,6 +6,10 @@ struct ContentView: View {
     @Binding var showingSettings: Bool
     @State private var selectedRoom: String? = "All"
     @AppStorage("hasOnboarded") private var hasOnboarded = false
+    @FetchAll private var roomPrefs: [RoomPref]
+    @FetchAll private var itemPrefs: [ItemPref]
+    @State private var iconRoom: String?
+    @State private var showingHidden = false
 
     var body: some View {
         // Onboarding replaces the whole window so nothing of the main UI shows behind it.
@@ -21,21 +26,82 @@ struct ContentView: View {
         .animation(.smooth(duration: 0.45), value: hasOnboarded)
     }
 
+    private var homeID: String { store.currentHomeID ?? "" }
+
+    /// Pinned first, then the user's order, then HomeKit's.
+    private var rooms: [String] {
+        let prefs = Dictionary(roomPrefs.filter { $0.homeID == homeID }.map { ($0.name, $0) }) { first, _ in first }
+        return store.rooms.enumerated().sorted { a, b in
+            let pa = prefs[a.element], pb = prefs[b.element]
+            return ((pa?.isPinned ?? false) ? 0 : 1, pa?.position ?? Int.max / 2, a.offset)
+                < ((pb?.isPinned ?? false) ? 0 : 1, pb?.position ?? Int.max / 2, b.offset)
+        }.map(\.element)
+    }
+
+    private var roomIcons: [String: String] {
+        Dictionary(roomPrefs.filter { $0.homeID == homeID }.compactMap { pref in pref.icon.map { (pref.name, $0) } }) { first, _ in first }
+    }
+
+    private var prefsByItem: [UUID: ItemPref] {
+        Dictionary(itemPrefs.map { ($0.deviceID, $0) }) { first, _ in first }
+    }
+
+    private func isPinned(_ room: String) -> Bool {
+        roomPrefs.contains { $0.homeID == homeID && $0.name == room && $0.isPinned }
+    }
+
+    private func visible(_ devices: [Device]) -> [Device] {
+        let prefs = prefsByItem
+        return devices
+            .filter { showingHidden || !(prefs[$0.id]?.isHidden ?? false) }
+            .enumerated()
+            .sorted { a, b in
+                ((prefs[a.element.id]?.isPinned ?? false) ? 0 : 1, a.offset) < ((prefs[b.element.id]?.isPinned ?? false) ? 0 : 1, b.offset)
+            }
+            .map(\.element)
+    }
+
     private var home: some View {
         @Bindable var store = store
         return NavigationSplitView {
             List(selection: $selectedRoom) {
                 Label("All Devices", systemImage: "house.fill")
-                    .badge(store.devices.count)
+                    .badge(visible(store.devices).count)
                     .tag("All")
                 Section("Rooms") {
-                    ForEach(store.rooms, id: \.self) { room in
-                        Label(room, systemImage: Self.icon(forRoom: room))
-                            .badge(store.devices.count { $0.room == room })
-                            .tag(room)
+                    ForEach(rooms, id: \.self) { room in
+                        Label {
+                            Text(room)
+                        } icon: {
+                            Image(systemName: roomIcons[room] ?? Self.icon(forRoom: room))
+                                .overlay(alignment: .topTrailing) {
+                                    if isPinned(room) {
+                                        Image(systemName: "pin.fill").font(.system(size: 8)).foregroundStyle(.orange).offset(x: 6, y: -4)
+                                    }
+                                }
+                        }
+                        .badge(visible(store.devices).count { $0.room == room })
+                        .tag(room)
+                        .contextMenu {
+                            Button(isPinned(room) ? "Unpin" : "Pin to Top", systemImage: isPinned(room) ? "pin.slash" : "pin") {
+                                withAnimation(.snappy) { Prefs.update(room: room, in: homeID) { $0.isPinned.toggle() } }
+                            }
+                            Button("Change Icon", systemImage: "square.grid.2x2") { iconRoom = room }
+                        }
+                    }
+                    .onMove { from, to in
+                        var order = rooms
+                        order.move(fromOffsets: from, toOffset: to)
+                        withAnimation(.snappy) { Prefs.reorder(rooms: order, in: homeID) }
                     }
                 }
             }
+            .sheet(item: Binding(get: { iconRoom.map(IdentifiedString.init) }, set: { iconRoom = $0?.id })) { room in
+                IconPicker(title: room.id, current: roomIcons[room.id], tint: .accentColor) { icon in
+                    Prefs.update(room: room.id, in: homeID) { $0.icon = icon }
+                }
+            }
+            .sensoryFeedback(.selection, trigger: selectedRoom)
             .listStyle(.sidebar)
             .navigationTitle(store.homeName)
             #if !targetEnvironment(macCatalyst)
@@ -48,8 +114,13 @@ struct ContentView: View {
         } detail: {
             let room = selectedRoom ?? "All"
             RoomView(title: room == "All" ? "All Devices" : room,
-                     devices: store.devices.filter { room == "All" || $0.room == room },
+                     devices: visible(store.devices.filter { room == "All" || $0.room == room }),
                      showRoom: room == "All")
+                .toolbar {
+                    Toggle(isOn: $showingHidden.animation(.snappy)) {
+                        Label("Show Hidden", systemImage: showingHidden ? "eye.fill" : "eye.slash")
+                    }
+                }
                 .overlay {
                     if store.devices.isEmpty, let message = store.message {
                         ContentUnavailableView(message, systemImage: "house")
@@ -64,6 +135,8 @@ struct ContentView: View {
                     }
                 }
         }
+        .environment(\.itemPrefs, prefsByItem)
+        .environment(\.roomIcons, roomIcons)
     }
 
     /// Best-effort SF Symbol for a room name (German and English keywords).

@@ -4,6 +4,7 @@ struct DeviceDetailView: View {
     @Environment(HomeStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     let device: Device
+    @Environment(\.itemPrefs) private var prefs
 
     var body: some View {
         let binding = store.binding(for: device)
@@ -12,7 +13,7 @@ struct DeviceDetailView: View {
             Form {
                 Section {
                     VStack(spacing: 6) {
-                        Image(systemName: current.icon)
+                        Image(systemName: current.icon(prefs))
                             .font(.system(size: 40))
                             .foregroundStyle(current.isActive ? current.kind.tint : .secondary)
                             .contentTransition(.symbolEffect(.replace))

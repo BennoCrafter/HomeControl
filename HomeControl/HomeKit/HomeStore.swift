@@ -44,6 +44,8 @@ final class HomeStore: NSObject {
     /// Created on demand: instantiating HMHomeManager is what triggers the system permission prompt.
     @ObservationIgnored private var manager: HMHomeManager?
     @ObservationIgnored private var services: [UUID: HMService] = [:]
+    /// When this app last asked an item to change; until then a differing current state is it still moving.
+    @ObservationIgnored private var lastWrite: [UUID: Date] = [:]
     /// This device's HomeKit ids to the shared ids items are known by.
     @ObservationIgnored private var sharedIDs: [UUID: UUID] = [:]
     private(set) var cameras: [UUID: HMCameraProfile] = [:]
@@ -350,7 +352,22 @@ final class HomeStore: NSObject {
         guard services[id] != nil, let i = devices.firstIndex(where: { $0.id == id }) else { return }
         var device = Device(service: service, kind: devices[i].kind)
         device.id = id
+        // Turned by hand or by another app, a lock or door often reports only its new current state; the old target
+        // would then read as "Unlocking…" forever. A settled state nobody here asked for wins.
+        if let current = device.currentState, current <= 1, (current == 1) != device.isOn,
+           device.kind == .lock || device.kind == .garage,
+           Date.now.timeIntervalSince(lastWrite[id] ?? .distantPast) > 30 {
+            device.isOn = current == 1
+        }
         devices[i] = device
+    }
+
+    /// HomeKit sends nothing while the app is in the background: read everything afresh on coming back.
+    func readAll() {
+        for (id, service) in services {
+            guard let kind = devices.first(where: { $0.id == id })?.kind else { continue }
+            subscribe(to: service, kind: kind)
+        }
     }
 
     /// Optimistically updates the UI, then writes the changed characteristics to HomeKit.
@@ -366,6 +383,7 @@ final class HomeStore: NSObject {
         guard let service = services[new.id] else { return [] }
         let writes = new.writes(from: devices[i], on: service)
         devices[i] = new
+        lastWrite[new.id] = .now
         return [Task {
             defer { refresh(service) }
             do {

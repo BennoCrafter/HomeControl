@@ -10,6 +10,7 @@ struct ContentView: View {
     @FetchAll private var itemPrefs: [ItemPref]
     @FetchAll private var appearances: [Appearance]
     @FetchAll private var homes: [Home]
+    @Environment(\.scenePhase) private var scenePhase
     @State private var iconRoom: String?
     @State private var showingHidden = false
     @State private var tab = "Dashboard"
@@ -89,6 +90,7 @@ struct ContentView: View {
         #endif
         .onOpenURL(perform: open)
         .onChange(of: homes) { store.homesChanged() }
+        .onChange(of: scenePhase) { _, phase in if phase == .active { store.readAll() } }
         .sheet(item: $linkedItem) { DeviceDetailView(device: $0).environment(store) }
         .sheet(isPresented: $showingSettings) {
             SettingsView()

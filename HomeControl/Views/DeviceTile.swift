@@ -22,7 +22,11 @@ struct DeviceTile: View {
         // Split tile: the round icon toggles, the rest of the tile opens the details.
         HStack(spacing: 12) {
             Button {
-                if current.confirmationAction != nil {
+                if !current.kind.isControllable {
+                    // A sensor has nothing to switch: its icon opens it, like the rest of the tile.
+                    opens += 1
+                    openDetail()
+                } else if current.confirmationAction != nil {
                     confirming = true
                 } else {
                     binding.wrappedValue = current.toggled()
@@ -39,28 +43,30 @@ struct DeviceTile: View {
                     .shadow(color: current.isActive ? current.kind.tint.opacity(0.5) : .clear, radius: 8, y: 3)
             }
             .buttonStyle(PressScale(scale: 0.82))
-            .disabled(!current.isReachable || !current.kind.isControllable)
-            .accessibilityLabel("Toggle \(current.name)")
+            .disabled(!current.isReachable)
+            .accessibilityLabel(current.kind.isControllable ? "Toggle \(current.name)" : current.name)
             VStack(alignment: .leading, spacing: 2) {
                 if showRoom {
-                    Text(current.room).font(.caption).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.7)
+                    Text(current.room).font(.caption).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.5)
                 }
                 // Shrinks to fit rather than cutting the name off.
                 Text(current.name)
                     .font(.headline)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.6)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.4)
+                    .allowsTightening(true)
                 Text(current.status)
                     .font(.subheadline)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+                    .minimumScaleFactor(0.5)
                     .foregroundStyle(current.isReachable ? AnyShapeStyle(.secondary) : AnyShapeStyle(.orange))
                     .contentTransition(.numericText())
             }
             Spacer(minLength: 0)
-            Image(systemName: current.isReachable ? "chevron.right" : "exclamationmark.triangle.fill")
-                .font(.caption.bold())
-                .foregroundStyle(current.isReachable ? AnyShapeStyle(.tertiary) : AnyShapeStyle(.orange))
+            // No chevron: the room goes to the name. Only a problem gets a sign.
+            if !current.isReachable {
+                Image(systemName: "exclamationmark.triangle.fill").font(.caption.bold()).foregroundStyle(.orange)
+            }
         }
         .padding(14)
         .frame(maxWidth: .infinity, minHeight: 84, alignment: .leading)

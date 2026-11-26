@@ -12,7 +12,6 @@ struct ContentView: View {
     @FetchAll private var homes: [Home]
     @Environment(\.scenePhase) private var scenePhase
     @State private var iconRoom: String?
-    @State private var showingHidden = false
     @State private var tab = "Dashboard"
     /// Opened from a widget.
     @State private var linkedItem: Device?
@@ -66,7 +65,7 @@ struct ContentView: View {
         let prefs = prefsByItem
         let grouped = store.groupedIDs
         return devices
-            .filter { showingHidden || !(prefs[$0.id]?.isHidden ?? false) && !grouped.contains($0.id) }
+            .filter { !grouped.contains($0.id) }
             .enumerated()
             .sorted { a, b in
                 ((prefs[a.element.id]?.isPinned ?? false) ? 0 : 1, a.offset) < ((prefs[b.element.id]?.isPinned ?? false) ? 0 : 1, b.offset)
@@ -175,11 +174,6 @@ struct ContentView: View {
             RoomView(title: room == "All" ? String(localized: "All Devices") : room,
                      devices: visible((store.groupDevices + store.devices).filter { room == "All" || $0.room == room }),
                      showRoom: room == "All")
-                .toolbar {
-                    Toggle(isOn: $showingHidden.animation(.snappy)) {
-                        Label("Show Hidden", systemImage: showingHidden ? "eye.fill" : "eye.slash")
-                    }
-                }
                 .overlay {
                     if store.devices.isEmpty, let message = store.message {
                         ContentUnavailableView(message, systemImage: "house")

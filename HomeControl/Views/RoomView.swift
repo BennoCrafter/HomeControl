@@ -5,7 +5,9 @@ struct RoomView: View {
     let title: String
     let devices: [Device]
     let showRoom: Bool
+    @Environment(\.itemPrefs) private var prefs
     @State private var selected: Device?
+    /// Hold the title to edit: hidden items show again, and tapping items picks them for a group.
     @State private var isSelecting = false
     @State private var picked: [UUID] = []
     @State private var grouping = false
@@ -13,7 +15,8 @@ struct RoomView: View {
     var body: some View {
         ScrollView {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), spacing: 12)], spacing: 12) {
-                ForEach(devices) { device in
+                // Hidden stays hidden, except while editing.
+                ForEach(isSelecting ? devices : devices.filter { !(prefs[$0.id]?.isHidden ?? false) }) { device in
                     DeviceTile(device: device, showRoom: showRoom) { selected = device }
                         .overlay { if isSelecting { selectionOverlay(device) } }
                 }
@@ -23,20 +26,28 @@ struct RoomView: View {
         .background(HomeBackground())
         .navigationTitle(title)
         .toolbar {
-            Button(isSelecting ? "Done" : "Select") {
-                withAnimation(.snappy) {
-                    isSelecting.toggle()
-                    picked = []
+            ToolbarItem(placement: .principal) {
+                Text(title)
+                    .font(.headline)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .contentShape(.rect)
+                    .onLongPressGesture(minimumDuration: 0.4) { setEditing(true) }
+            }
+            if isSelecting {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done", systemImage: "checkmark") { setEditing(false) }
                 }
             }
-            .fontWeight(isSelecting ? .semibold : .regular)
         }
+        .sensoryFeedback(.impact(weight: .medium), trigger: isSelecting)
         .safeAreaInset(edge: .bottom) {
             if isSelecting {
                 Button {
                     grouping = true
                 } label: {
-                    Label(picked.count < 2 ? "Select Items to Group" : "Group \(picked.count) Items", systemImage: "square.stack.3d.up.fill")
+                    Label(picked.count < 2 ? "Tap Items to Group Them" : "Group \(picked.count) Items", systemImage: "square.stack.3d.up.fill")
                         .font(.headline)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 6)
@@ -74,6 +85,13 @@ struct RoomView: View {
         }
         #endif
         .sheet(item: $selected) { DeviceDetailView(device: $0).environment(store) }
+    }
+
+    private func setEditing(_ editing: Bool) {
+        withAnimation(.snappy) {
+            isSelecting = editing
+            picked = []
+        }
     }
 
     /// Covers the tile while selecting, so a tap picks it instead of switching it.

@@ -7,9 +7,17 @@ struct DeviceDetailView: View {
     @Environment(\.itemPrefs) private var prefs
 
     var body: some View {
+        if let group = store.group(for: device.id) {
+            GroupDetailView(group: group)
+        } else {
+            details
+        }
+    }
+
+    private var details: some View {
         let binding = store.binding(for: device)
         let current = binding.wrappedValue
-        NavigationStack {
+        return NavigationStack {
             Form {
                 Section {
                     VStack(spacing: 6) {

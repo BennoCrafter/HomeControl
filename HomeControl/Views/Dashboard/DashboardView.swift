@@ -422,7 +422,7 @@ struct DashboardView: View {
             }
             Button("Add Person…", systemImage: "person.badge.plus") { namingProfile = true }
             Section {
-                ShareLink(item: DashboardFile(cards: shareableCards, devices: store.devices),
+                ShareLink(item: DashboardFile(cards: shareableCards, devices: store.devices, groups: store.allGroups),
                           preview: SharePreview("\(profiles.name(of: profiles.selected))'s Dashboard", image: Image(systemName: "square.grid.2x2")))
                 Button("Import Dashboard…", systemImage: "square.and.arrow.down") { importing = true }
                 let others = profiles.all.filter { $0.id != profiles.selected }
@@ -478,7 +478,7 @@ struct DashboardView: View {
     private func copy(from member: String) {
         let source = allCards.filter { $0.homeID == homeID && $0.memberID == member }
         withAnimation(.spring(duration: 0.45, bounce: 0.25)) {
-            try? DashboardFile(cards: source, devices: store.devices).install(homeID: homeID, memberID: profiles.selected, devices: store.devices)
+            try? DashboardFile(cards: source, devices: store.devices, groups: store.allGroups).install(homeID: homeID, memberID: profiles.selected, devices: store.devices)
         }
     }
 

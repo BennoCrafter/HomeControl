@@ -91,6 +91,10 @@ final class HomeStore: NSObject {
         groupRows.filter { $0.homeID == currentHomeID && $0.kind == kind }
     }
 
+    var allGroups: [DeviceGroup] {
+        groupRows.filter { $0.homeID == currentHomeID }
+    }
+
     func group(id: Int) -> DeviceGroup? {
         groupRows.first { $0.id == id }
     }

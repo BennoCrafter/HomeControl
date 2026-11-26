@@ -45,8 +45,6 @@ struct DashboardView: View {
     }
 
     @State private var profiles = Profiles(homeID: "")
-    @State private var namingProfile = false
-    @State private var newProfileName = ""
     @State private var importing = false
     @State private var importError: String?
 
@@ -122,9 +120,9 @@ struct DashboardView: View {
                     }
                 }
                 .toolbar { toolbar(columns: columns) }
-                .task(id: "\(homeID)\(columns)\(profiles.selected)") {
+                .task(id: "\(homeID)\(columns)\(profiles.selected)\(store.people)") {
                     self.columns = columns
-                    if profiles.homeID != homeID { profiles = Profiles(homeID: homeID) }
+                    if profiles.homeID != homeID || profiles.all != store.people { profiles = Profiles(homeID: homeID, people: store.people) }
                     seedIfNeeded(columns: columns)
                 }
                 #if DEBUG
@@ -437,10 +435,9 @@ struct DashboardView: View {
                     withAnimation(.spring(duration: 0.45, bounce: 0.25)) { profiles.selected = id }
                 })) {
                     ForEach(profiles.all) { profile in
-                        Label(profile.name, systemImage: profile.id.isEmpty ? "person.crop.circle.fill" : "person.crop.circle").tag(profile.id)
+                        Label(profile.name, systemImage: profile.id == store.meID ? "person.crop.circle.fill" : "person.crop.circle").tag(profile.id)
                     }
                 }
-                Button("Add Person…", systemImage: "person.badge.plus") { namingProfile = true }
                 Section {
                     ShareLink(item: DashboardFile(cards: shareableCards, devices: store.devices, groups: store.allGroups),
                               preview: SharePreview("\(profiles.name(of: profiles.selected))'s Dashboard", image: Image(systemName: "square.grid.2x2")))
@@ -452,11 +449,6 @@ struct DashboardView: View {
                                 Button(profile.name) { copy(from: profile.id) }
                             }
                         }
-                    }
-                }
-                if !profiles.selected.isEmpty {
-                    Button("Remove \(profiles.name(of: profiles.selected))", systemImage: "person.badge.minus", role: .destructive) {
-                        withAnimation { profiles.remove(profiles.selected) }
                     }
                 }
             }
@@ -481,18 +473,6 @@ struct DashboardView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(importError ?? "")
-        }
-        .alert("Add Person", isPresented: $namingProfile) {
-            TextField("Name", text: $newProfileName)
-            Button("Add") {
-                let name = newProfileName.trimmingCharacters(in: .whitespaces)
-                newProfileName = ""
-                guard !name.isEmpty else { return }
-                withAnimation { profiles.add(name) }
-            }
-            Button("Cancel", role: .cancel) { newProfileName = "" }
-        } message: {
-            Text("Each person in the home gets their own dashboard on this device.")
         }
     }
 
@@ -610,7 +590,9 @@ struct DashboardView: View {
     /// A first layout per home: the status, then every room. Only once, so an emptied dashboard stays empty.
     private func seedIfNeeded(columns: Int) {
         let key = seededKey
-        guard folder == nil, !homeID.isEmpty, !store.devices.isEmpty, !UserDefaults.standard.bool(forKey: key) else { return }
+        let member = profiles.selected
+        guard folder == nil, !homeID.isEmpty, !store.devices.isEmpty, !UserDefaults.standard.bool(forKey: key),
+              !allCards.contains(where: { $0.homeID == homeID && $0.columns == columns && $0.memberID == member }) else { return }
         UserDefaults.standard.set(true, forKey: key)
         add(.status, ref: "", columns: columns)
         for room in store.rooms {

@@ -48,12 +48,18 @@ final class HomeStore: NSObject {
     @ObservationIgnored private var sharedIDs: [UUID: UUID] = [:]
     private(set) var cameras: [UUID: HMCameraProfile] = [:]
     @ObservationIgnored @FetchAll private var groupRows: [DeviceGroup]
+    /// This person's iCloud user, whose dashboard is "Me"; empty without iCloud.
+    private(set) var meID = UserDefaults.standard.string(forKey: "iCloudUserID") ?? ""
+    /// Me, then everyone else in the home's iCloud share.
+    private(set) var people: [Profiles.Profile] = []
 
     private static let requestedKey = "homeAccessRequested"
     private static let homeKey = "selectedHome"
 
     override init() {
         super.init()
+        people = [Profiles.Profile(id: meID, name: String(localized: "Me"))]
+        Task { await loadMe() }
         if UserDefaults.standard.string(forKey: Self.homeKey) == HomeOption.demo.id { reload() }
     }
 
@@ -225,13 +231,59 @@ final class HomeStore: NSObject {
             return device
         }
         saveItemDirectory()
+        loadPeople()
         message = result.isEmpty ? "No supported accessories in \(home.name)." : nil
     }
 
     /// Reloads when a family member's shared home arrives, so its groups and dashboards line up with this device.
     func homesChanged() {
+        loadPeople()
         guard !isDemo, let currentHomeID, sharedHomeID(named: homeName) ?? homeKitID != currentHomeID else { return }
         reload()
+    }
+
+    // MARK: - People
+
+    private func loadMe() async {
+        do {
+            let id = try await CKContainer(identifier: Schema.iCloudContainer).userRecordID().recordName
+            guard id != meID else { return }
+            meID = id
+            UserDefaults.standard.set(id, forKey: "iCloudUserID")
+            claimDashboards()
+            loadPeople()
+        } catch {
+            logger.info("No iCloud user: \(error)")
+        }
+    }
+
+    /// Dashboards made before iCloud knew who's who become this person's.
+    private func claimDashboards() {
+        @Dependency(\.defaultDatabase) var database
+        let me = meID
+        try? database.write { db in
+            try DashboardCard.where { $0.memberID.eq("") }.update { $0.memberID = me }.execute(db)
+        }
+    }
+
+    /// The share of the current home, if it's shared either way.
+    func homeShare() -> CKShare? {
+        guard let currentHomeID else { return nil }
+        @Dependency(\.defaultDatabase) var database
+        return try? database.read { db in
+            try SyncMetadata.where { $0.recordPrimaryKey.eq(currentHomeID) && $0.recordType.eq(Home.tableName) }.fetchOne(db)?.share
+        }
+    }
+
+    func loadPeople() {
+        let me = Profiles.Profile(id: meID, name: String(localized: "Me"))
+        let others = (homeShare()?.participants ?? []).compactMap { participant -> Profiles.Profile? in
+            guard participant.acceptanceStatus == .accepted, participant != homeShare()?.currentUserParticipant,
+                  let id = participant.userIdentity.userRecordID?.recordName else { return nil }
+            let name = participant.userIdentity.nameComponents.map { PersonNameComponentsFormatter.localizedString(from: $0, style: .default) }
+            return Profiles.Profile(id: id == CKCurrentUserDefaultName ? meID : id, name: name ?? String(localized: "Someone"))
+        }
+        people = [me] + others
     }
 
     // MARK: - Shared ids

@@ -145,8 +145,8 @@ struct DashboardView: View {
             .background(HomeBackground())
             .navigationTitle(folder?.name ?? store.homeName)
             .navigationBarTitleDisplayMode(.inline)
-            // Pushed, not sheets: the dashboard is the start of a path into the home.
-            .navigationDestination(item: $selected) { DeviceDetailView(device: $0, isPushed: true) }
+            // An item opens on top, to switch and dismiss; a room or collection is a place to go into.
+            .sheet(item: $selected) { DeviceDetailView(device: $0).environment(store) }
             .navigationDestination(item: Binding(get: { openedRoom.map(IdentifiedString.init) }, set: { openedRoom = $0?.id })) { room in
                 RoomView(title: room.id, devices: store.items(in: room.id), showRoom: false)
             }

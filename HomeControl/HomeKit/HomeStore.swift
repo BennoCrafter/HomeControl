@@ -50,6 +50,7 @@ final class HomeStore: NSObject {
     @ObservationIgnored private var services: [UUID: HMService] = [:]
     /// When this app last asked an item to change; until then a differing current state is it still moving.
     @ObservationIgnored private var lastWrite: [UUID: Date] = [:]
+    @ObservationIgnored private var pendingWidgetTaps = 0
     /// This device's HomeKit ids to the shared ids items are known by.
     @ObservationIgnored private var sharedIDs: [UUID: UUID] = [:]
     private(set) var cameras: [UUID: HMCameraProfile] = [:]
@@ -480,9 +481,20 @@ extension HomeStore {
 
     /// From a widget or control: waits for HomeKit to load the home when the app was launched for it.
     func set(_ id: UUID, active: Bool) async throws {
+        // Until it's done, loading the home mustn't put the old state back into the widget the tap just flipped.
+        pendingWidgetTaps += 1
+        defer {
+            pendingWidgetTaps -= 1
+            saveSnapshot()
+        }
         reconnect()
-        for _ in 0 ..< 50 where !(devices + groupDevices).contains(where: { $0.id == id }) {
+        // Launched in the background, HomeKit can take well over 5 s to load the home; an intent may run about 30.
+        for _ in 0 ..< 250 where !(devices + groupDevices).contains(where: { $0.id == id }) {
             try await Task.sleep(for: .milliseconds(100))
+        }
+        guard (devices + groupDevices).contains(where: { $0.id == id }) else {
+            logger.error("Widget tap: \(id) didn't load in time")
+            return
         }
         // Launched for a widget tap, HomeKit hands over the accessories before reading them: decided on that, an
         // "off" light would look off already and the tap would be dropped. Read first.
@@ -513,7 +525,7 @@ extension HomeStore {
 
     /// The widgets read the home from here; reloaded at most every few seconds while sliders move.
     func saveSnapshot() {
-        guard let currentHomeID else { return }
+        guard let currentHomeID, pendingWidgetTaps == 0 else { return }
         @Dependency(\.defaultDatabase) var database
         do {
             // Read afresh: right after a group is saved, the fetched groups haven't caught up yet.

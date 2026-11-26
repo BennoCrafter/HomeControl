@@ -62,6 +62,17 @@ struct ContentView: View {
     }
 
     private var home: some View {
+        TabView {
+            Tab("Dashboard", systemImage: "square.grid.2x2.fill") { DashboardView() }
+            Tab("Rooms", systemImage: "house.fill") { roomsView }
+        }
+        .tabViewStyle(.sidebarAdaptable)
+        .environment(\.itemPrefs, prefsByItem)
+        .environment(\.roomIcons, roomIcons)
+        .sheet(isPresented: $showingSettings) { SettingsView().environment(store) }
+    }
+
+    private var roomsView: some View {
         @Bindable var store = store
         return NavigationSplitView {
             List(selection: $selectedRoom) {
@@ -110,7 +121,6 @@ struct ContentView: View {
                 Button("Settings", systemImage: "gear") { showingSettings = true }
             }
             #endif
-            .sheet(isPresented: $showingSettings) { SettingsView().environment(store) }
         } detail: {
             let room = selectedRoom ?? "All"
             RoomView(title: room == "All" ? "All Devices" : room,
@@ -135,8 +145,6 @@ struct ContentView: View {
                     }
                 }
         }
-        .environment(\.itemPrefs, prefsByItem)
-        .environment(\.roomIcons, roomIcons)
     }
 
     /// Best-effort SF Symbol for a room name (German and English keywords).

@@ -101,7 +101,8 @@ struct DashboardView: View {
                 let spacing: CGFloat = geometry.size.width < 600 ? 10 : 14
                 let cell = max(1, (geometry.size.width - spacing * CGFloat(columns + 1)) / CGFloat(columns))
                 // Rows a little shorter than wide: item cards read as tiles, not squares.
-                let step = CGSize(width: cell + spacing, height: cell * 0.72 + spacing)
+                // Never shorter than a tile: a phone on its side gets 8 narrow columns.
+                let step = CGSize(width: cell + spacing, height: max(cell * 0.72, 76) + spacing)
                 let frames = preview(columns: columns, step: step)
                 let rows = (frames.values.map(\.maxY).max() ?? 0) + (isEditing ? 1 : 0)
                 ScrollView {
@@ -235,7 +236,8 @@ struct DashboardView: View {
                 }
             }
         }
-        .animation(.spring(duration: 0.4, bounce: 0.25), value: frames)
+        // Only while arranging: otherwise a layout pass (launch, a sheet resizing the window) would send the cards flying.
+        .animation(isEditing ? .spring(duration: 0.4, bounce: 0.25) : nil, value: frames)
         .animation(.spring(duration: 0.3), value: isEditing)
     }
 
@@ -355,8 +357,11 @@ struct DashboardView: View {
         .allowsHitTesting(!isEditing)
         .overlay {
             if isEditing {
+                // Catches the touches the content no longer takes, for the move and resize gesture.
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(.clear)
                     .strokeBorder(Color.accentColor.opacity(0.6), style: StrokeStyle(lineWidth: 1.5, dash: [5]))
+                    .contentShape(.rect(cornerRadius: 20))
             }
         }
     }

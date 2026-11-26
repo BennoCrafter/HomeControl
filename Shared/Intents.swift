@@ -116,8 +116,24 @@ struct ToggleDeviceIntent: LiveActivityIntent {
         let target = device.toggled()
         WidgetData.update(uuid) { $0 = target }
         WidgetCenter.shared.reloadAllTimelines()
-        try await DeviceActions.setOn?(uuid, target.isActive)
+        try await setInForegroundIfNeeded(uuid, target.isActive)
         return .result()
+    }
+
+    @available(iOS 26, *)
+    static var supportedModes: IntentModes { [.background, .foreground(.dynamic)] }
+}
+
+extension AppIntent {
+    /// HomeKit only takes writes from an app on screen; when it refuses in the background, the app comes forward and tries again.
+    @MainActor func setInForegroundIfNeeded(_ id: UUID, _ active: Bool) async throws {
+        do {
+            try await DeviceActions.setOn?(id, active)
+        } catch {
+            guard #available(iOS 26, *) else { throw error }
+            try await continueInForeground(alwaysConfirm: false)
+            try await DeviceActions.setOn?(id, active)
+        }
     }
 }
 
@@ -140,7 +156,10 @@ struct SetDeviceIntent: SetValueIntent, LiveActivityIntent {
             if device.kind == .blinds { device.value = value ? 1 : 0 } else { device.isOn = device.kind == .garage ? !value : value }
         }
         ControlCenter.shared.reloadAllControls()
-        try await DeviceActions.setOn?(id, value)
+        try await setInForegroundIfNeeded(id, value)
         return .result()
     }
+
+    @available(iOS 26, *)
+    static var supportedModes: IntentModes { [.background, .foreground(.dynamic)] }
 }

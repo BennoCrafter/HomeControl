@@ -135,17 +135,14 @@ final class HomeStore: NSObject {
     }
 
     /// The main member takes the group's new state; without one, every member is switched.
-    private func update(group: DeviceGroup, to new: Device) {
+    private func update(group: DeviceGroup, to new: Device) -> [Task<Void, any Error>] {
         let members = members(of: group)
         if let main = members.first(where: { $0.id == group.mainID }) {
             var target = new
             (target.id, target.name, target.accessoryName, target.room, target.customIcon) = (main.id, main.name, main.accessoryName, main.room, nil)
-            update(target)
-        } else {
-            for member in members where member.kind.isControllable {
-                update(member.setting(active: new.isActive))
-            }
+            return update(target)
         }
+        return members.filter(\.kind.isControllable).flatMap { update($0.setting(active: new.isActive)) }
     }
 
     fileprivate func reload() {
@@ -223,24 +220,27 @@ final class HomeStore: NSObject {
     }
 
     /// Optimistically updates the UI, then writes the changed characteristics to HomeKit.
-    private func update(_ new: Device) {
+    /// The writes, to wait for; they fail when HomeKit refuses, as it does for an app in the background.
+    @discardableResult
+    private func update(_ new: Device) -> [Task<Void, any Error>] {
         if let group = group(for: new.id) { return update(group: group, to: new) }
-        guard let i = devices.firstIndex(where: { $0.id == new.id }) else { return }
+        guard let i = devices.firstIndex(where: { $0.id == new.id }) else { return [] }
         if isDemo {
             simulate(from: devices[i], to: new)
-            return
+            return []
         }
-        guard let service = services[new.id] else { return }
+        guard let service = services[new.id] else { return [] }
         let writes = new.writes(from: devices[i], on: service)
         devices[i] = new
-        Task {
+        return [Task {
+            defer { refresh(service) }
             do {
                 for (characteristic, value) in writes { try await characteristic.writeValue(value) }
             } catch {
                 message = "\(new.name): \(error.localizedDescription)"
+                throw error
             }
-            refresh(service)
-        }
+        }]
     }
 
     /// Demo accessories react like real ones: the garage door takes a moment to move.
@@ -284,7 +284,9 @@ extension HomeStore {
             try await Task.sleep(for: .milliseconds(100))
         }
         guard let device = (devices + groupDevices).first(where: { $0.id == id }), device.isActive != active else { return }
-        update(device.toggled())
+        for write in update(device.toggled()) {
+            try await write.value
+        }
     }
 
     /// The widgets read the home from here; reloaded at most every few seconds while sliders move.

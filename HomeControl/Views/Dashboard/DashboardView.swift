@@ -80,6 +80,7 @@ struct DashboardView: View {
             }
             .background(HomeBackground())
             .navigationTitle(store.homeName)
+            .navigationBarTitleDisplayMode(.inline)
             .sheet(item: $selected) { DeviceDetailView(device: $0).environment(store) }
             .sheet(item: Binding(get: { openedRoom.map(IdentifiedString.init) }, set: { openedRoom = $0?.id })) { room in
                 NavigationStack {

@@ -93,7 +93,8 @@ final class HomeStore: NSObject {
 
     func binding(for device: Device) -> Binding<Device> {
         Binding(
-            get: { (self.devices + self.groupDevices).first { $0.id == device.id } ?? device },
+            // Groups only when it isn't a plain item: building them is the slow part, and this runs per tile per frame.
+            get: { self.devices.first { $0.id == device.id } ?? self.groupDevices.first { $0.id == device.id } ?? device },
             set: { self.update($0) }
         )
     }

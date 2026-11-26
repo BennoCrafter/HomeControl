@@ -22,7 +22,8 @@ struct DashboardView: View {
     @FetchAll private var allCards: [DashboardCard]
     @State private var isEditing = false
     @State private var drag: ActiveDrag?
-    @State private var cardFrames: [UUID: CGRect] = [:]
+    /// Where each card is on screen, for telling the resize corner from the rest.
+    @State private var cardFrames = FrameBox()
     @State private var selected: Device?
     @State private var openedRoom: String?
     @State private var confirmingReset = false
@@ -42,7 +43,8 @@ struct DashboardView: View {
 
     /// This screen size's layout, of the chosen profile.
     private var cards: [DashboardCard] {
-        allCards.filter { $0.homeID == homeID && $0.columns == columns && $0.memberID == profiles.selected && $0.folderID == folder?.id && isValid($0) }
+        let refs = validRefs
+        return allCards.filter { $0.homeID == homeID && $0.columns == columns && $0.memberID == profiles.selected && $0.folderID == folder?.id && isValid($0, refs) }
     }
 
     @State private var profiles = Profiles(homeID: "")
@@ -51,17 +53,18 @@ struct DashboardView: View {
 
     /// Every card of the chosen person in this home, both screen sizes: what a shared file holds.
     private var shareableCards: [DashboardCard] {
-        allCards.filter { $0.homeID == homeID && $0.memberID == profiles.selected && isValid($0) }
+        let refs = validRefs
+        return allCards.filter { $0.homeID == homeID && $0.memberID == profiles.selected && isValid($0, refs) }
     }
 
     /// Cards of items or rooms that left the home are skipped, not deleted: they may come back.
-    private func isValid(_ card: DashboardCard) -> Bool {
-        switch card.kind {
-        case .item, .camera: store.devices.contains { $0.id.uuidString == card.ref }
-        case .room: store.rooms.contains(card.ref)
-        case .status: true
-        case .group, .collection, .folder: UUID(uuidString: card.ref).flatMap(store.group(id:)) != nil
-        }
+    private func isValid(_ card: DashboardCard, _ refs: Set<String>) -> Bool {
+        card.kind == .status || refs.contains(card.ref)
+    }
+
+    /// Everything a card can point at; a set, as it's asked for every card on every frame of a drag.
+    private var validRefs: Set<String> {
+        Set(store.devices.map(\.id.uuidString) + store.rooms + store.allGroups.map(\.id.uuidString))
     }
 
     private func group(_ card: DashboardCard) -> DeviceGroup? {
@@ -97,10 +100,11 @@ struct DashboardView: View {
                 // Rows a little shorter than wide: item cards read as tiles, not squares.
                 // Never shorter than a tile: a phone on its side gets 8 narrow columns.
                 let step = CGSize(width: cell + spacing, height: max(cell * 0.72, 76) + spacing)
-                let frames = preview(columns: columns, step: step)
+                let cards = self.cards
+                let frames = preview(columns: columns, cards: cards)
                 let rows = (frames.values.map(\.maxY).max() ?? 0) + (isEditing ? 1 : 0)
                 ScrollView {
-                    canvas(frames: frames, columns: columns, step: step, spacing: spacing)
+                    canvas(cards: cards, frames: frames, columns: columns, step: step, spacing: spacing)
                         .frame(width: geometry.size.width - spacing * 2,
                                height: max(0, CGFloat(rows) * step.height - spacing),
                                alignment: .topLeading)
@@ -180,7 +184,7 @@ struct DashboardView: View {
 
     // MARK: - Grid
 
-    private func canvas(frames: [UUID: GridFrame], columns: Int, step: CGSize, spacing: CGFloat) -> some View {
+    private func canvas(cards: [DashboardCard], frames: [UUID: GridFrame], columns: Int, step: CGSize, spacing: CGFloat) -> some View {
         ZStack(alignment: .topLeading) {
             if isEditing {
                 // The cells, faintly, so it's clear where a card can go.
@@ -217,7 +221,7 @@ struct DashboardView: View {
                         .scaleEffect(drag?.id == card.id ? 1.04 : 1)
                         .shadow(color: .black.opacity(drag?.id == card.id ? 0.25 : 0), radius: 16, y: 8)
                         .zIndex(drag?.id == card.id ? 1 : 0)
-                        .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { cardFrames[card.id] = $0 }
+                        .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { cardFrames.frames[card.id] = $0 }
                         .gesture(dragGesture(card, columns: columns, step: step))
                         .position(x: area.midX, y: area.midY)
                         .transition(.scale(scale: 0.6).combined(with: .opacity))
@@ -249,12 +253,12 @@ struct DashboardView: View {
         }
     }
 
-    private func committed(columns: Int) -> [UUID: GridFrame] {
-        DashboardEngine.fit(Dictionary(cards.map { ($0.id, $0.frame) }) { first, _ in first }, columns: columns)
+    private func committed(columns: Int, cards: [DashboardCard]? = nil) -> [UUID: GridFrame] {
+        DashboardEngine.fit(Dictionary((cards ?? self.cards).map { ($0.id, $0.frame) }) { first, _ in first }, columns: columns)
     }
 
-    private func preview(columns: Int, step _: CGSize) -> [UUID: GridFrame] {
-        let frames = committed(columns: columns)
+    private func preview(columns: Int, cards: [DashboardCard]) -> [UUID: GridFrame] {
+        let frames = committed(columns: columns, cards: cards)
         guard let drag else { return frames }
         return DashboardEngine.relayout(frames, moving: drag.id, to: drag.target, columns: columns)
     }
@@ -276,7 +280,7 @@ struct DashboardView: View {
 
     private func dragGesture(_ card: DashboardCard, columns: Int, step: CGSize) -> HoldToDrag {
         HoldToDrag(isEnabled: isEditing) { location in
-            guard let frame = cardFrames[card.id] else { return .move }
+            guard let frame = cardFrames.frames[card.id] else { return .move }
             return hypot(frame.maxX - location.x, frame.maxY - location.y) < 44 ? .resize : .move
         } onChanged: { handle, translation in
             let start = drag?.start ?? committed(columns: columns)[card.id] ?? card.frame
@@ -332,7 +336,8 @@ struct DashboardView: View {
                 }
             case .folder:
                 if let folder = group(card) {
-                    let inside = allCards.filter { $0.folderID == folder.id && $0.columns == columns && $0.memberID == profiles.selected && isValid($0) }
+                    let refs = validRefs
+                    let inside = allCards.filter { $0.folderID == folder.id && $0.columns == columns && $0.memberID == profiles.selected && isValid($0, refs) }
                     Button { openedFolder = folder } label: {
                         FolderCard(name: folder.name, icons: inside.sorted { ($0.y, $0.x) < ($1.y, $1.x) }.map(icon(for:)))
                     }
@@ -480,7 +485,9 @@ struct DashboardView: View {
     }
 
     private func addMenu(columns: Int) -> some View {
-        Menu {
+        let cards = self.cards // once: the menu is rebuilt on every frame of a drag
+        let shown = Set(cards.map(\.ref))
+        return Menu {
             Button("Status", systemImage: "gauge.with.dots.needle.67percent") { add(.status, ref: "", columns: columns) }
                 .disabled(cards.contains { $0.kind == .status })
             Menu("Room", systemImage: "square.split.bottomrightquarter") {
@@ -493,7 +500,7 @@ struct DashboardView: View {
                 Menu(room) {
                     ForEach(store.devices.filter { $0.room == room && $0.kind != .camera }) { device in
                         Button(device.name, systemImage: device.icon) { add(.item, ref: device.id.uuidString, columns: columns) }
-                            .disabled(cards.contains { $0.ref == device.id.uuidString })
+                            .disabled(shown.contains(device.id.uuidString))
                     }
                 }
             }
@@ -511,7 +518,7 @@ struct DashboardView: View {
                 Menu("Camera", systemImage: "web.camera") {
                     ForEach(cameras) { camera in
                         Button(camera.name) { add(.camera, ref: camera.id.uuidString, columns: columns) }
-                            .disabled(cards.contains { $0.ref == camera.id.uuidString })
+                            .disabled(shown.contains(camera.id.uuidString))
                     }
                 }
             }
@@ -595,6 +602,11 @@ struct DashboardView: View {
             add(.room, ref: room, columns: columns)
         }
     }
+}
+
+/// A plain class, not state: measuring cards every frame of a drag mustn't re-render the dashboard.
+private final class FrameBox {
+    var frames: [UUID: CGRect] = [:]
 }
 
 /// Edit mode wiggles the cards a little, each slightly out of step, like the Home Screen.

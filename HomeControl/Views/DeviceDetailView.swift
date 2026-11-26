@@ -59,7 +59,7 @@ struct DeviceDetailView: View {
                 ToolbarItem(placement: isPushed ? .topBarTrailing : .topBarLeading) { editMenu(current) }
                 if !isPushed {
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("Done", systemImage: "xmark") { dismiss() }
+                        Button("Done", systemImage: "checkmark") { dismiss() }
                     }
                 }
             }

@@ -70,7 +70,7 @@ struct InviteView: View {
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) { Button("Done", systemImage: "xmark") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) { Button("Done", systemImage: "checkmark") { dismiss() } }
             }
             .sheet(item: $sharedRecord, onDismiss: store.loadPeople) { CloudSharingView(sharedRecord: $0) }
             .alert("Couldn't Share", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {

@@ -79,31 +79,27 @@ struct LockControl: View {
 struct ContactView: View {
     let device: Device
     let since: Date?
+    @Environment(\.itemPrefs) private var prefs
 
     var body: some View {
         VStack(spacing: 16) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(device.isContactOpen ? device.kind.tint.opacity(0.25) : Color.secondary.opacity(0.12))
-                // The leaf, hinged on the left; perspective kept low so it stays inside the frame.
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color(.systemGray4).gradient)
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .strokeBorder(.black.opacity(0.08), lineWidth: 2)
-                            .padding(14)
-                    }
-                    .overlay(alignment: .trailing) {
-                        Capsule().fill(Color(.systemGray)).frame(width: 8, height: 26).padding(.trailing, 12)
-                    }
-                    .rotation3DEffect(.degrees(device.isContactOpen ? -58 : 0), axis: (0, 1, 0), anchor: .leading, perspective: 0.25)
-                    .shadow(color: .black.opacity(device.isContactOpen ? 0.2 : 0), radius: 8, x: 6)
-            }
-            .frame(width: 130, height: 210)
-            .padding(10)
-            .clipShape(.rect)
-            .background(.quinary, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .animation(.spring(duration: 0.7, bounce: 0.35), value: device.isContactOpen)
+            // The item's own icon, so a window looks like a window: it lights up and rings out while open.
+            Image(systemName: device.icon(prefs))
+                .font(.system(size: 64, weight: .semibold))
+                .foregroundStyle(device.isContactOpen ? AnyShapeStyle(.white) : AnyShapeStyle(.secondary))
+                .contentTransition(.symbolEffect(.replace))
+                .frame(width: 170, height: 170)
+                .background(device.isContactOpen ? AnyShapeStyle(device.kind.tint.gradient) : AnyShapeStyle(.quaternary), in: .circle)
+                .shadow(color: device.isContactOpen ? device.kind.tint.opacity(0.5) : .clear, radius: 24, y: 8)
+                .background {
+                    Circle()
+                        .stroke(device.kind.tint, lineWidth: 4)
+                        .phaseAnimator([false, true]) { ring, phase in
+                            ring.scaleEffect(phase ? 1.4 : 1).opacity(device.isContactOpen && !phase ? 0.6 : 0)
+                        } animation: { phase in phase ? .easeOut(duration: 1.4) : .linear(duration: 0) }
+                }
+                .scaleEffect(device.isContactOpen ? 1.04 : 1)
+                .animation(.spring(duration: 0.5, bounce: 0.4), value: device.isContactOpen)
 
             Text(device.isContactOpen ? "Open" : "Closed")
                 .font(.largeTitle.bold())

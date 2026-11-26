@@ -125,7 +125,7 @@ private struct RemoteView: View {
                     .frame(width: size, height: size)
                     .background(device.isActive ? AnyShapeStyle(Color.accentColor.gradient) : AnyShapeStyle(.regularMaterial), in: .circle)
                     .shadow(color: device.isActive ? Color.accentColor.opacity(0.45) : .black.opacity(0.08), radius: 8, y: 3)
-                Text(device.name).font(.caption2).foregroundStyle(.secondary).lineLimit(1).frame(width: size + 16)
+                Text(device.name).font(.caption2).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.6).frame(width: size + 16)
             }
         }
         .buttonStyle(PressScale(scale: 0.82))

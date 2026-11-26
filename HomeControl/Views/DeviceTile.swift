@@ -43,13 +43,17 @@ struct DeviceTile: View {
             .accessibilityLabel("Toggle \(current.name)")
             VStack(alignment: .leading, spacing: 2) {
                 if showRoom {
-                    Text(current.room).font(.caption).foregroundStyle(.secondary)
+                    Text(current.room).font(.caption).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.7)
                 }
+                // Shrinks to fit rather than cutting the name off.
                 Text(current.name)
                     .font(.headline)
                     .lineLimit(2)
+                    .minimumScaleFactor(0.6)
                 Text(current.status)
                     .font(.subheadline)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
                     .foregroundStyle(current.isReachable ? AnyShapeStyle(.secondary) : AnyShapeStyle(.orange))
                     .contentTransition(.numericText())
             }

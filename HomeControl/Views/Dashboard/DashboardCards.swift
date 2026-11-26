@@ -28,7 +28,7 @@ struct RoomCard: View {
                         .frame(width: 34, height: 34)
                         .background(Color.accentColor.opacity(0.15), in: .rect(cornerRadius: 10))
                     VStack(alignment: .leading, spacing: 0) {
-                        Text(title).font(.headline).lineLimit(1)
+                        Text(title).font(.headline).lineLimit(1).minimumScaleFactor(0.6)
                         Text(active == 0 ? "All off" : "\(active) on")
                             .font(.caption)
                             .foregroundStyle(.secondary)
@@ -42,7 +42,7 @@ struct RoomCard: View {
             GeometryReader { geometry in
                 let size: CGFloat = large ? 54 : 42
                 let perRow = max(1, Int((geometry.size.width + 8) / (size + 8)))
-                let rows = max(1, Int((geometry.size.height + 8) / (size + (large ? 22 : 8))))
+                let rows = max(1, Int((geometry.size.height + 8) / (size + (large ? 38 : 8))))
                 LazyVGrid(columns: Array(repeating: GridItem(.fixed(size), spacing: 8), count: perRow), alignment: .leading, spacing: 8) {
                     ForEach(devices.prefix(perRow * rows)) { device in
                         toggle(device, size: size)
@@ -76,7 +76,8 @@ struct RoomCard: View {
                     .background(device.isActive ? AnyShapeStyle(device.kind.tint.gradient) : AnyShapeStyle(.quaternary), in: .circle)
                     .shadow(color: device.isActive ? device.kind.tint.opacity(0.45) : .clear, radius: 6, y: 2)
                 if large {
-                    Text(device.name).font(.caption2).lineLimit(1).frame(width: size + 6)
+                    Text(device.name).font(.caption2).lineLimit(2).minimumScaleFactor(0.6).multilineTextAlignment(.center)
+                        .frame(width: size + 6, height: 26, alignment: .top)
                 }
             }
         }
@@ -166,7 +167,7 @@ struct FolderCard: View {
                 }
             }
             HStack {
-                Text(name).font(.headline).lineLimit(1)
+                Text(name).font(.headline).lineLimit(1).minimumScaleFactor(0.6)
                 Spacer(minLength: 0)
                 Text("\(icons.count)").font(.caption.bold()).foregroundStyle(.secondary).contentTransition(.numericText())
             }

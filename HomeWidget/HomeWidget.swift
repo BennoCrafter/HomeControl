@@ -93,7 +93,7 @@ private struct AccessoryWidgetView: View {
                         HStack {
                             Image(systemName: device.icon).font(.title2)
                             VStack(alignment: .leading) {
-                                Text(device.name).font(.headline).lineLimit(1)
+                                Text(device.name).font(.headline).lineLimit(1).minimumScaleFactor(0.6)
                                 Text(device.status).font(.caption)
                             }
                         }
@@ -128,7 +128,7 @@ private struct AccessoryWidgetView: View {
             .buttonStyle(.plain)
             .invalidatableContent()
             Spacer(minLength: 0)
-            Text(device.name).font(.headline).lineLimit(2)
+            Text(device.name).font(.headline).lineLimit(2).minimumScaleFactor(0.6)
             Text(device.status).font(.subheadline).foregroundStyle(.secondary).contentTransition(.numericText())
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -198,7 +198,7 @@ private struct RoomWidgetView: View {
                                 .foregroundStyle(device.isActive ? AnyShapeStyle(.white) : AnyShapeStyle(.secondary))
                                 .frame(width: 48, height: 48)
                                 .background(device.isActive ? AnyShapeStyle(device.kind.tint.gradient) : AnyShapeStyle(.quaternary), in: .circle)
-                            Text(device.name).font(.caption2).lineLimit(2).multilineTextAlignment(.center)
+                            Text(device.name).font(.caption2).lineLimit(2).minimumScaleFactor(0.6).multilineTextAlignment(.center)
                         }
                         .frame(maxWidth: .infinity)
                     }

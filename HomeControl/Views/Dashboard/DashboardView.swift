@@ -21,7 +21,7 @@ struct DashboardView: View {
     @FetchAll private var allCards: [DashboardCard]
     @State private var isEditing = false
     @State private var drag: ActiveDrag?
-    @State private var cardFrames: [Int: CGRect] = [:]
+    @State private var cardFrames: [UUID: CGRect] = [:]
     @State private var selected: Device?
     @State private var openedRoom: String?
     @State private var confirmingReset = false
@@ -29,7 +29,7 @@ struct DashboardView: View {
     @State private var columns = 4
 
     private struct ActiveDrag: Equatable {
-        var id: Int
+        var id: UUID
         var handle: DragHandle
         var start: GridFrame
         var translation: CGSize
@@ -61,12 +61,12 @@ struct DashboardView: View {
         case .item, .camera: store.devices.contains { $0.id.uuidString == card.ref }
         case .room: store.rooms.contains(card.ref)
         case .status: true
-        case .group, .collection, .folder: Int(card.ref).flatMap(store.group(id:)) != nil
+        case .group, .collection, .folder: UUID(uuidString: card.ref).flatMap(store.group(id:)) != nil
         }
     }
 
     private func group(_ card: DashboardCard) -> DeviceGroup? {
-        Int(card.ref).flatMap(store.group(id:))
+        UUID(uuidString: card.ref).flatMap(store.group(id:))
     }
 
     private func items(of group: DeviceGroup) -> [Device] {
@@ -163,7 +163,7 @@ struct DashboardView: View {
             }
             .sheet(item: $editingCollection) { GroupEditor(kind: .collection, existing: $0).environment(store) }
             .sheet(isPresented: $addingCollection) {
-                GroupEditor(kind: .collection) { id in add(.collection, ref: "\(id)", columns: columns) }.environment(store)
+                GroupEditor(kind: .collection) { id in add(.collection, ref: id.uuidString, columns: columns) }.environment(store)
             }
             .alert("New Folder", isPresented: $namingFolder) {
                 TextField("Name", text: $newFolderName)
@@ -171,7 +171,7 @@ struct DashboardView: View {
                     let name = newFolderName.trimmingCharacters(in: .whitespaces)
                     newFolderName = ""
                     if let id = Groups.save(DeviceGroup.Draft(homeID: homeID, kind: .folder, name: name.isEmpty ? String(localized: "Folder") : name)) {
-                        add(.folder, ref: "\(id)", columns: columns)
+                        add(.folder, ref: id.uuidString, columns: columns)
                     }
                 }
                 Button("Cancel", role: .cancel) { newFolderName = "" }
@@ -187,7 +187,7 @@ struct DashboardView: View {
 
     // MARK: - Grid
 
-    private func canvas(frames: [Int: GridFrame], columns: Int, step: CGSize, spacing: CGFloat) -> some View {
+    private func canvas(frames: [UUID: GridFrame], columns: Int, step: CGSize, spacing: CGFloat) -> some View {
         ZStack(alignment: .topLeading) {
             if isEditing {
                 // The cells, faintly, so it's clear where a card can go.
@@ -218,7 +218,7 @@ struct DashboardView: View {
                     let area = liveRect(card: card, target: frame, step: step, spacing: spacing)
                     cardView(card)
                         .frame(width: area.width, height: area.height)
-                        .modifier(Jiggle(isOn: isEditing && drag?.id != card.id, seed: card.id))
+                        .modifier(Jiggle(isOn: isEditing && drag?.id != card.id, seed: Int(card.id.uuid.0)))
                         .overlay(alignment: .topLeading) { if isEditing { removeButton(card) } }
                         .overlay(alignment: .bottomTrailing) { if isEditing { resizeGrip } }
                         .scaleEffect(drag?.id == card.id ? 1.04 : 1)
@@ -256,11 +256,11 @@ struct DashboardView: View {
         }
     }
 
-    private func committed(columns: Int) -> [Int: GridFrame] {
+    private func committed(columns: Int) -> [UUID: GridFrame] {
         DashboardEngine.fit(Dictionary(cards.map { ($0.id, $0.frame) }) { first, _ in first }, columns: columns)
     }
 
-    private func preview(columns: Int, step _: CGSize) -> [Int: GridFrame] {
+    private func preview(columns: Int, step _: CGSize) -> [UUID: GridFrame] {
         let frames = committed(columns: columns)
         guard let drag else { return frames }
         return DashboardEngine.relayout(frames, moving: drag.id, to: drag.target, columns: columns)
@@ -525,8 +525,8 @@ struct DashboardView: View {
             if !groups.isEmpty {
                 Menu("Group", systemImage: "square.stack.3d.up") {
                     ForEach(groups) { group in
-                        Button(group.name) { add(.group, ref: "\(group.id)", columns: columns) }
-                            .disabled(cards.contains { $0.kind == .group && $0.ref == "\(group.id)" })
+                        Button(group.name) { add(.group, ref: group.id.uuidString, columns: columns) }
+                            .disabled(cards.contains { $0.kind == .group && $0.ref == group.id.uuidString })
                     }
                 }
             }
@@ -571,7 +571,7 @@ struct DashboardView: View {
         @Dependency(\.defaultDatabase) var database
         try? database.write { db in try DashboardCard.find(card.id).delete().execute(db) }
         // A collection or folder lives in its card; gone once no layout shows it any more.
-        if card.kind == .collection || card.kind == .folder, let id = Int(card.ref),
+        if card.kind == .collection || card.kind == .folder, let id = UUID(uuidString: card.ref),
            !allCards.contains(where: { $0.id != card.id && $0.kind == card.kind && $0.ref == card.ref }) {
             Groups.delete(id)
         }
@@ -579,7 +579,7 @@ struct DashboardView: View {
     }
 
     /// One transaction for the whole layout.
-    private func save(_ frames: [Int: GridFrame]) {
+    private func save(_ frames: [UUID: GridFrame]) {
         @Dependency(\.defaultDatabase) var database
         do {
             try database.write { db in

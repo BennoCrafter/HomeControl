@@ -5,7 +5,7 @@ struct GroupEditor: View {
     let kind: DeviceGroup.Kind
     /// The group being edited; nil makes a new one.
     let existing: DeviceGroup?
-    let saved: (Int) -> Void
+    let saved: (UUID) -> Void
 
     @Environment(HomeStore.self) private var store
     @Environment(\.dismiss) private var dismiss
@@ -16,7 +16,7 @@ struct GroupEditor: View {
     @State private var choosingIcon = false
     @State private var picks = 0
 
-    init(kind: DeviceGroup.Kind, existing: DeviceGroup? = nil, preselected: [UUID] = [], saved: @escaping (Int) -> Void = { _ in }) {
+    init(kind: DeviceGroup.Kind, existing: DeviceGroup? = nil, preselected: [UUID] = [], saved: @escaping (UUID) -> Void = { _ in }) {
         self.kind = kind
         self.existing = existing
         self.saved = saved

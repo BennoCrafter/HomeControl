@@ -1,3 +1,4 @@
+import Foundation
 import SQLiteData
 
 /// Writes groups, collections and folders, and tells the widgets about them.
@@ -5,7 +6,7 @@ import SQLiteData
 enum Groups {
     /// Inserts a new one or replaces an existing one; returns its id.
     @discardableResult
-    static func save(_ group: DeviceGroup.Draft) -> Int? {
+    static func save(_ group: DeviceGroup.Draft) -> UUID? {
         @Dependency(\.defaultDatabase) var database
         do {
             let id = try database.write { db in try DeviceGroup.upsert { group }.returning(\.id).fetchOne(db) }
@@ -18,7 +19,7 @@ enum Groups {
     }
 
     /// Removes it, and every dashboard card showing it or sitting in it.
-    static func delete(_ id: Int) {
+    static func delete(_ id: UUID) {
         @Dependency(\.defaultDatabase) var database
         do {
             try database.write { db in

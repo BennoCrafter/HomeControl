@@ -45,12 +45,12 @@ extension DashboardCard.Kind {
 enum DashboardEngine {
     /// Overlapped cards are pushed down in reading order, then all but the moved one compact upward,
     /// so the dropped card stays exactly where it was placed.
-    static func relayout(_ frames: [Int: GridFrame], moving id: Int, to desired: GridFrame, columns: Int) -> [Int: GridFrame] {
+    static func relayout<ID: Hashable>(_ frames: [ID: GridFrame], moving id: ID, to desired: GridFrame, columns: Int) -> [ID: GridFrame] {
         var moved = desired
         moved.width = min(moved.width, columns)
         moved.x = max(0, min(moved.x, columns - moved.width))
         moved.y = max(0, moved.y)
-        var placed: [Int: GridFrame] = [id: moved]
+        var placed: [ID: GridFrame] = [id: moved]
         for (other, frame) in frames.filter({ $0.key != id }).sorted(by: { ($0.value.y, $0.value.x) < ($1.value.y, $1.value.x) }) {
             var settled = frame
             while placed.values.contains(where: { $0.overlaps(settled) }) {
@@ -62,8 +62,8 @@ enum DashboardEngine {
     }
 
     /// Top to bottom, so each card only compacts against already settled neighbours.
-    static func compact(_ frames: [Int: GridFrame], pinned: Int? = nil) -> [Int: GridFrame] {
-        var result: [Int: GridFrame] = [:]
+    static func compact<ID: Hashable>(_ frames: [ID: GridFrame], pinned: ID? = nil) -> [ID: GridFrame] {
+        var result: [ID: GridFrame] = [:]
         if let pinned, let frame = frames[pinned] {
             result[pinned] = frame
         }
@@ -81,7 +81,7 @@ enum DashboardEngine {
     }
 
     /// A narrower screen than the layout was made on: cards too wide shrink, then everything settles.
-    static func fit(_ frames: [Int: GridFrame], columns: Int) -> [Int: GridFrame] {
+    static func fit<ID: Hashable>(_ frames: [ID: GridFrame], columns: Int) -> [ID: GridFrame] {
         var fitted = frames.mapValues { frame in
             var frame = frame
             frame.width = min(frame.width, columns)
@@ -89,7 +89,7 @@ enum DashboardEngine {
             return frame
         }
         // Resolve overlaps the shrinking caused, in reading order.
-        var placed: [Int: GridFrame] = [:]
+        var placed: [ID: GridFrame] = [:]
         for (id, frame) in fitted.sorted(by: { ($0.value.y, $0.value.x) < ($1.value.y, $1.value.x) }) {
             var settled = frame
             while placed.values.contains(where: { $0.overlaps(settled) }) {

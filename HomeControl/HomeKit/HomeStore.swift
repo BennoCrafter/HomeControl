@@ -95,7 +95,7 @@ final class HomeStore: NSObject {
         groupRows.filter { $0.homeID == currentHomeID }
     }
 
-    func group(id: Int) -> DeviceGroup? {
+    func group(id: UUID) -> DeviceGroup? {
         groupRows.first { $0.id == id }
     }
 
@@ -166,6 +166,7 @@ final class HomeStore: NSObject {
         if selected == HomeOption.demo.id {
             currentHomeID = HomeOption.demo.id
             homeName = HomeOption.demo.name
+            saveHome()
             DemoHome.seedGroups()
             devices = DemoHome.devices()
             message = nil
@@ -191,6 +192,7 @@ final class HomeStore: NSObject {
         }
         currentHomeID = home.uniqueIdentifier.uuidString
         homeName = home.name
+        saveHome()
         var result: [Device] = []
         for accessory in home.accessories {
             accessory.delegate = self
@@ -338,6 +340,17 @@ extension HomeStore {
         guard let device = (devices + groupDevices).first(where: { $0.id == id }), device.isActive != active else { return }
         for write in update(device.toggled()) {
             try await write.value
+        }
+    }
+
+    /// The row every preference of this home hangs off.
+    private func saveHome() {
+        guard let currentHomeID else { return }
+        @Dependency(\.defaultDatabase) var database
+        do {
+            try database.write { db in try Schema.ensureHome(currentHomeID, name: homeName, in: db) }
+        } catch {
+            logger.error("Saving the home failed: \(error)")
         }
     }
 

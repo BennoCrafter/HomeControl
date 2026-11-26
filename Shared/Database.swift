@@ -1,4 +1,5 @@
 import Foundation
+import GRDB
 import OSLog
 import SQLiteData
 
@@ -7,10 +8,18 @@ let logger = Logger(subsystem: "de.bennowo.homecontrol", category: "HomeControl"
 /// Shared with the widgets through this App Group.
 let appGroup = "group.de.bennowo.homecontrol"
 
+/// One home: the root everything else hangs off, and what gets shared with family through iCloud.
+@Table("homes")
+struct Home: Identifiable, Hashable, Sendable {
+    /// HomeKit's id of the home, or "demo".
+    let id: String
+    var name = ""
+}
+
 /// A room's look and place: its icon, its order, and whether it's pinned to the top.
 @Table("rooms")
 struct RoomPref: Identifiable, Hashable, Sendable {
-    let id: Int
+    let id: UUID
     var homeID: String
     var name: String
     /// An SF Symbol; nil: guessed from the name.
@@ -22,7 +31,7 @@ struct RoomPref: Identifiable, Hashable, Sendable {
 /// An item's look and place. Keyed by the HomeKit service's id.
 @Table("items")
 struct ItemPref: Identifiable, Hashable, Sendable {
-    let id: Int
+    let id: UUID
     var homeID: String
     var deviceID: UUID
     var icon: String?
@@ -38,7 +47,7 @@ struct DashboardCard: Identifiable, Hashable, Sendable {
         case item, room, status, camera, group, collection, folder
     }
 
-    let id: Int
+    let id: UUID
     var homeID: String
     var kind: Kind
     /// The item's id, the room's name, or a `DeviceGroup`'s id; empty for the status card.
@@ -52,7 +61,7 @@ struct DashboardCard: Identifiable, Hashable, Sendable {
     /// Whose dashboard: a profile's id, the same on every device of one Home member.
     var memberID = ""
     /// The folder card this card sits in; nil on the dashboard itself.
-    var folderID: Int?
+    var folderID: UUID?
 }
 
 /// Items gathered into one: a group (one tile in the rooms), a collection card, or a dashboard folder.
@@ -62,7 +71,7 @@ struct DeviceGroup: Identifiable, Hashable, Sendable {
         case group, collection, folder
     }
 
-    let id: Int
+    let id: UUID
     var homeID: String
     var kind = Kind.group
     var name = ""
@@ -77,8 +86,8 @@ struct DeviceGroup: Identifiable, Hashable, Sendable {
         set { members = newValue.map(\.uuidString).joined(separator: ",") }
     }
 
-    /// Stands in for the group wherever an item goes: tiles, widgets, controls. Random HomeKit ids never look like this.
-    var deviceID: UUID { UUID(uuidString: String(format: "00000000-0000-4000-8000-%012X", id))! }
+    /// Stands in for the group wherever an item goes: tiles, widgets, controls.
+    var deviceID: UUID { id }
 }
 
 /// The home's background and how see-through the tiles are.
@@ -110,10 +119,24 @@ struct Snapshot: Identifiable, Hashable, Sendable {
     }
 }
 
+@DatabaseFunction
+nonisolated func uuid() -> UUID {
+    UUID()
+}
+
 enum Schema {
-    static func database() throws -> any DatabaseWriter {
+    static func configuration() -> Configuration {
         var configuration = Configuration()
         configuration.foreignKeysEnabled = true
+        configuration.prepareDatabase { db in
+            // New rows get their id from SQLite.
+            db.add(function: $uuid)
+        }
+        return configuration
+    }
+
+    static func database() throws -> any DatabaseWriter {
+        let configuration = configuration()
         let url = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroup)?
             .appending(path: "HomeControl.sqlite")
         // shortcut: without the App Group (unsigned builds) the database is the app's own, so widgets see nothing.
@@ -212,6 +235,112 @@ enum Schema {
             ).execute(db)
             try #sql(#"ALTER TABLE "cards" ADD COLUMN "folderID" INTEGER"#).execute(db)
         }
+        migrator.registerMigration("Make tables syncable", migrate: migrateToSyncableTables)
         return migrator
+    }
+
+    /// iCloud needs ids that are unique everywhere and no other uniqueness rules, and a home every row belongs to.
+    /// Integer ids become UUIDs; references to groups follow them.
+    nonisolated private static func migrateToSyncableTables(_ db: Database) throws {
+        try db.execute(sql: """
+            CREATE TABLE "homes" (
+              "id" TEXT PRIMARY KEY NOT NULL ON CONFLICT REPLACE,
+              "name" TEXT NOT NULL DEFAULT ''
+            ) STRICT;
+            INSERT INTO "homes" ("id")
+              SELECT "homeID" FROM "rooms" UNION SELECT "homeID" FROM "items" UNION SELECT "homeID" FROM "cards"
+              UNION SELECT "homeID" FROM "groups" UNION SELECT "id" FROM "appearances";
+            ALTER TABLE "rooms" RENAME TO "oldRooms";
+            ALTER TABLE "items" RENAME TO "oldItems";
+            ALTER TABLE "cards" RENAME TO "oldCards";
+            ALTER TABLE "groups" RENAME TO "oldGroups";
+            ALTER TABLE "appearances" RENAME TO "oldAppearances";
+            CREATE TABLE "rooms" (
+              "id" TEXT PRIMARY KEY NOT NULL ON CONFLICT REPLACE DEFAULT (uuid()),
+              "homeID" TEXT NOT NULL REFERENCES "homes"("id") ON DELETE CASCADE,
+              "name" TEXT NOT NULL,
+              "icon" TEXT,
+              "position" INTEGER NOT NULL DEFAULT 0,
+              "isPinned" INTEGER NOT NULL DEFAULT 0
+            ) STRICT;
+            INSERT INTO "rooms" ("homeID", "name", "icon", "position", "isPinned")
+              SELECT "homeID", "name", "icon", "position", "isPinned" FROM "oldRooms";
+            CREATE TABLE "items" (
+              "id" TEXT PRIMARY KEY NOT NULL ON CONFLICT REPLACE DEFAULT (uuid()),
+              "homeID" TEXT NOT NULL REFERENCES "homes"("id") ON DELETE CASCADE,
+              "deviceID" TEXT NOT NULL,
+              "icon" TEXT,
+              "position" INTEGER NOT NULL DEFAULT 0,
+              "isPinned" INTEGER NOT NULL DEFAULT 0,
+              "isHidden" INTEGER NOT NULL DEFAULT 0
+            ) STRICT;
+            INSERT INTO "items" ("homeID", "deviceID", "icon", "position", "isPinned", "isHidden")
+              SELECT "homeID", "deviceID", "icon", "position", "isPinned", "isHidden" FROM "oldItems";
+            CREATE TABLE "groups" (
+              "id" TEXT PRIMARY KEY NOT NULL ON CONFLICT REPLACE DEFAULT (uuid()),
+              "homeID" TEXT NOT NULL REFERENCES "homes"("id") ON DELETE CASCADE,
+              "kind" TEXT NOT NULL DEFAULT 'group',
+              "name" TEXT NOT NULL DEFAULT '',
+              "icon" TEXT,
+              "members" TEXT NOT NULL DEFAULT '',
+              "mainID" TEXT
+            ) STRICT;
+            CREATE TABLE "cards" (
+              "id" TEXT PRIMARY KEY NOT NULL ON CONFLICT REPLACE DEFAULT (uuid()),
+              "homeID" TEXT NOT NULL REFERENCES "homes"("id") ON DELETE CASCADE,
+              "kind" TEXT NOT NULL,
+              "ref" TEXT NOT NULL DEFAULT '',
+              "x" INTEGER NOT NULL DEFAULT 0,
+              "y" INTEGER NOT NULL DEFAULT 0,
+              "width" INTEGER NOT NULL DEFAULT 2,
+              "height" INTEGER NOT NULL DEFAULT 2,
+              "columns" INTEGER NOT NULL DEFAULT 4,
+              "memberID" TEXT NOT NULL DEFAULT '',
+              "folderID" TEXT
+            ) STRICT;
+            CREATE TABLE "appearances" (
+              "id" TEXT PRIMARY KEY NOT NULL ON CONFLICT REPLACE REFERENCES "homes"("id") ON DELETE CASCADE,
+              "background" TEXT NOT NULL DEFAULT 'aurora',
+              "photo" BLOB,
+              "tileOpacity" REAL NOT NULL DEFAULT 0.6,
+              "gradientJSON" BLOB
+            ) STRICT;
+            INSERT INTO "appearances" SELECT "id", "background", "photo", "tileOpacity", "gradientJSON" FROM "oldAppearances";
+            """)
+        // Groups get new ids; collections listing a group, and cards showing one, follow.
+        var newIDs: [Int64: String] = [:]
+        var newItemIDs: [String: String] = [:]
+        let groups = try Row.fetchAll(db, sql: #"SELECT * FROM "oldGroups""#)
+        for row in groups {
+            let id: Int64 = row["id"]
+            newIDs[id] = UUID().uuidString
+            newItemIDs[String(format: "00000000-0000-4000-8000-%012llX", id)] = newIDs[id]!
+        }
+        for row in groups {
+            let members = (row["members"] as String).split(separator: ",").map { newItemIDs[String($0)] ?? String($0) }.joined(separator: ",")
+            try db.execute(
+                sql: #"INSERT INTO "groups" VALUES (?, ?, ?, ?, ?, ?, ?)"#,
+                arguments: [newIDs[row["id"]]!.lowercased(), row["homeID"], row["kind"], row["name"], row["icon"], members, row["mainID"]]
+            )
+        }
+        for row in try Row.fetchAll(db, sql: #"SELECT * FROM "oldCards""#) {
+            let kind: String = row["kind"]
+            var ref: String = row["ref"]
+            if ["group", "collection", "folder"].contains(kind) {
+                guard let id = Int64(ref).flatMap({ newIDs[$0] }) else { continue }
+                ref = id
+            }
+            let folderID = (row["folderID"] as Int64?).flatMap { newIDs[$0]?.lowercased() }
+            try db.execute(
+                sql: #"INSERT INTO "cards" ("homeID", "kind", "ref", "x", "y", "width", "height", "columns", "memberID", "folderID") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"#,
+                arguments: [row["homeID"], kind, ref, row["x"], row["y"], row["width"], row["height"], row["columns"], row["memberID"], folderID]
+            )
+        }
+        try db.execute(sql: #"DROP TABLE "oldRooms"; DROP TABLE "oldItems"; DROP TABLE "oldCards"; DROP TABLE "oldGroups"; DROP TABLE "oldAppearances""#)
+    }
+
+    /// Every row belongs to a home; this makes sure the home's row is there.
+    static func ensureHome(_ id: String, name: String, in db: Database) throws {
+        try Home.upsert { Home(id: id, name: name) }.execute(db)
     }
 }

@@ -12,6 +12,7 @@ struct DeviceTile: View {
     @State private var toggles = 0
     @State private var choosingIcon = false
     @State private var opens = 0
+    @State private var editingGroup = false
     @Environment(\.tileOpacity) private var tileOpacity
     @Environment(\.itemPrefs) private var prefs
 
@@ -87,7 +88,10 @@ struct DeviceTile: View {
             Button(pref?.isPinned == true ? "Unpin" : "Pin to Top", systemImage: pref?.isPinned == true ? "pin.slash" : "pin") {
                 withAnimation(.snappy) { Prefs.update(item: device.id, in: homeID) { $0.isPinned.toggle() } }
             }
-            Button("Change Icon", systemImage: "square.grid.2x2") { choosingIcon = true }
+            if store.group(for: device.id) == nil {
+                Button("Change Icon", systemImage: "square.grid.2x2") { choosingIcon = true }
+            }
+            Button(store.group(for: device.id) == nil ? "Group With…" : "Edit Group…", systemImage: "square.stack.3d.up") { editingGroup = true }
             Button(pref?.isHidden == true ? "Show" : "Hide", systemImage: pref?.isHidden == true ? "eye" : "eye.slash") {
                 withAnimation(.snappy) { Prefs.update(item: device.id, in: homeID) { $0.isHidden.toggle() } }
             }
@@ -96,6 +100,9 @@ struct DeviceTile: View {
             IconPicker(title: current.name, current: pref?.icon, tint: current.kind.tint) { icon in
                 Prefs.update(item: device.id, in: homeID) { $0.icon = icon }
             }
+        }
+        .sheet(isPresented: $editingGroup) {
+            GroupEditor(kind: .group, existing: store.group(for: device.id), preselected: [device.id]).environment(store)
         }
         .confirmationDialog("\(current.confirmationAction ?? "") \(current.name)?",
                             isPresented: $confirming, titleVisibility: .visible) {

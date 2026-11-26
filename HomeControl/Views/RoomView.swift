@@ -6,18 +6,59 @@ struct RoomView: View {
     let devices: [Device]
     let showRoom: Bool
     @State private var selected: Device?
+    @State private var isSelecting = false
+    @State private var picked: [UUID] = []
+    @State private var grouping = false
 
     var body: some View {
         ScrollView {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), spacing: 12)], spacing: 12) {
                 ForEach(devices) { device in
                     DeviceTile(device: device, showRoom: showRoom) { selected = device }
+                        .overlay { if isSelecting { selectionOverlay(device) } }
                 }
             }
             .padding()
         }
         .background(HomeBackground())
         .navigationTitle(title)
+        .toolbar {
+            Button(isSelecting ? "Done" : "Select") {
+                withAnimation(.snappy) {
+                    isSelecting.toggle()
+                    picked = []
+                }
+            }
+            .fontWeight(isSelecting ? .semibold : .regular)
+        }
+        .safeAreaInset(edge: .bottom) {
+            if isSelecting {
+                Button {
+                    grouping = true
+                } label: {
+                    Label(picked.count < 2 ? "Select Items to Group" : "Group \(picked.count) Items", systemImage: "square.stack.3d.up.fill")
+                        .font(.headline)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 6)
+                }
+                .buttonStyle(.borderedProminent)
+                .buttonBorderShape(.capsule)
+                .disabled(picked.count < 2)
+                .padding()
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .contentTransition(.numericText())
+            }
+        }
+        .sheet(isPresented: $grouping) {
+            GroupEditor(kind: .group, preselected: picked) { _ in
+                withAnimation(.snappy) {
+                    isSelecting = false
+                    picked = []
+                }
+            }
+            .environment(store)
+        }
+        .sensoryFeedback(.selection, trigger: picked)
         #if DEBUG
         // Screenshots: `-open "Front Door"` opens that item's details.
         .task {
@@ -33,5 +74,31 @@ struct RoomView: View {
         }
         #endif
         .sheet(item: $selected) { DeviceDetailView(device: $0).environment(store) }
+    }
+
+    /// Covers the tile while selecting, so a tap picks it instead of switching it.
+    private func selectionOverlay(_ device: Device) -> some View {
+        let isPicked = picked.contains(device.id)
+        let canGroup = device.kind != .camera && store.group(for: device.id) == nil && !store.groupedIDs.contains(device.id)
+        return RoundedRectangle(cornerRadius: 20, style: .continuous)
+            .fill(isPicked ? Color.accentColor.opacity(0.15) : .clear)
+            .strokeBorder(isPicked ? Color.accentColor : .clear, lineWidth: 2)
+            .contentShape(.rect(cornerRadius: 20))
+            .overlay(alignment: .topTrailing) {
+                Image(systemName: isPicked ? "checkmark.circle.fill" : "circle")
+                    .font(.title3)
+                    .foregroundStyle(isPicked ? Color.accentColor : .secondary)
+                    .background(.background, in: .circle)
+                    .contentTransition(.symbolEffect(.replace))
+                    .padding(8)
+                    .opacity(canGroup ? 1 : 0)
+            }
+            .onTapGesture {
+                guard canGroup else { return }
+                withAnimation(.spring(duration: 0.25, bounce: 0.4)) {
+                    if isPicked { picked.removeAll { $0 == device.id } } else { picked.append(device.id) }
+                }
+            }
+            .transition(.opacity)
     }
 }

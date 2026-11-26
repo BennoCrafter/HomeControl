@@ -57,8 +57,9 @@ struct ContentView: View {
 
     private func visible(_ devices: [Device]) -> [Device] {
         let prefs = prefsByItem
+        let grouped = store.groupedIDs
         return devices
-            .filter { showingHidden || !(prefs[$0.id]?.isHidden ?? false) }
+            .filter { showingHidden || !(prefs[$0.id]?.isHidden ?? false) && !grouped.contains($0.id) }
             .enumerated()
             .sorted { a, b in
                 ((prefs[a.element.id]?.isPinned ?? false) ? 0 : 1, a.offset) < ((prefs[b.element.id]?.isPinned ?? false) ? 0 : 1, b.offset)
@@ -94,8 +95,13 @@ struct ContentView: View {
         return NavigationSplitView {
             List(selection: $selectedRoom) {
                 Label("All Devices", systemImage: "house.fill")
-                    .badge(visible(store.devices).count)
+                    .badge(visible(store.devices + store.groupDevices).count)
                     .tag("All")
+                if !store.groupDevices.isEmpty {
+                    Label("Groups", systemImage: "square.stack.3d.up.fill")
+                        .badge(store.groupDevices.count)
+                        .tag("Groups")
+                }
                 Section("Rooms") {
                     ForEach(rooms, id: \.self) { room in
                         Label {
@@ -140,8 +146,9 @@ struct ContentView: View {
             #endif
         } detail: {
             let room = selectedRoom ?? "All"
-            RoomView(title: room == "All" ? "All Devices" : room,
-                     devices: visible(store.devices.filter { room == "All" || $0.room == room }),
+            RoomView(title: room == "All" ? String(localized: "All Devices") : room == "Groups" ? String(localized: "Groups") : room,
+                     devices: room == "Groups" ? visible(store.groupDevices)
+                         : visible((room == "All" ? store.groupDevices : []) + store.devices.filter { room == "All" || $0.room == room }),
                      showRoom: room == "All")
                 .toolbar {
                     Toggle(isOn: $showingHidden.animation(.snappy)) {

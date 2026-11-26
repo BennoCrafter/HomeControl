@@ -38,6 +38,7 @@ final class HomeStore: NSObject {
     /// Created on demand: instantiating HMHomeManager is what triggers the system permission prompt.
     @ObservationIgnored private var manager: HMHomeManager?
     @ObservationIgnored private var services: [UUID: HMService] = [:]
+    @ObservationIgnored private(set) var cameras: [UUID: HMCameraProfile] = [:]
 
     private static let requestedKey = "homeAccessRequested"
     private static let homeKey = "selectedHome"
@@ -87,6 +88,7 @@ final class HomeStore: NSObject {
             homes = manager.homes.map { HomeOption(id: $0.uniqueIdentifier.uuidString, name: $0.name) } + [.demo]
         }
         services = [:]
+        cameras = [:]
 
         let selected = UserDefaults.standard.string(forKey: Self.homeKey)
         if selected == HomeOption.demo.id {
@@ -124,6 +126,10 @@ final class HomeStore: NSObject {
                 services[service.uniqueIdentifier] = service
                 result.append(Device(service: service, kind: kind))
                 subscribe(to: service, kind: kind)
+            }
+            for camera in accessory.cameraProfiles ?? [] {
+                cameras[camera.uniqueIdentifier] = camera
+                result.append(Device(camera: camera, accessory: accessory))
             }
         }
         devices = result

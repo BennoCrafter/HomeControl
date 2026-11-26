@@ -226,7 +226,9 @@ struct DashboardView: View {
             case .status:
                 StatusCard(compact: card.width < 4)
             case .camera:
-                EmptyView()
+                if let device = store.devices.first(where: { $0.id.uuidString == card.ref }) {
+                    CameraCard(device: device)
+                }
             }
         }
         .allowsHitTesting(!isEditing)
@@ -298,9 +300,18 @@ struct DashboardView: View {
             }
             ForEach(store.rooms, id: \.self) { room in
                 Menu(room) {
-                    ForEach(store.devices.filter { $0.room == room }) { device in
+                    ForEach(store.devices.filter { $0.room == room && $0.kind != .camera }) { device in
                         Button(device.name, systemImage: device.icon) { add(.item, ref: device.id.uuidString, columns: columns) }
                             .disabled(cards.contains { $0.ref == device.id.uuidString })
+                    }
+                }
+            }
+            let cameras = store.devices.filter { $0.kind == .camera }
+            if !cameras.isEmpty {
+                Menu("Camera", systemImage: "web.camera") {
+                    ForEach(cameras) { camera in
+                        Button(camera.name) { add(.camera, ref: camera.id.uuidString, columns: columns) }
+                            .disabled(cards.contains { $0.ref == camera.id.uuidString })
                     }
                 }
             }

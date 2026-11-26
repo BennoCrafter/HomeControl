@@ -1,10 +1,10 @@
 import SwiftUI
 
 enum DeviceKind: String, Codable, CaseIterable {
-    case light, thermostat, lock, garage, plug, blinds, contact
+    case light, thermostat, lock, garage, plug, blinds, contact, camera
 
     /// Sensors only report state; everything else can be switched.
-    var isControllable: Bool { self != .contact }
+    var isControllable: Bool { self != .contact && self != .camera }
 
     var tint: Color {
         switch self {
@@ -15,6 +15,7 @@ enum DeviceKind: String, Codable, CaseIterable {
         case .plug: .green
         case .blinds: .indigo
         case .contact: .mint
+        case .camera: .blue
         }
     }
 }
@@ -59,6 +60,7 @@ struct Device: Identifiable, Codable, Hashable {
         case .plug: "powerplug.fill"
         case .blinds: value > 0 ? "blinds.horizontal.open" : "blinds.horizontal.closed"
         case .contact: isContactOpen ? "door.left.hand.open" : "door.left.hand.closed"
+        case .camera: "web.camera.fill"
         }
     }
 
@@ -92,6 +94,8 @@ struct Device: Identifiable, Codable, Hashable {
             return position == 0 ? "Closed" : "\(position.formatted(.percent.precision(.fractionLength(0)))) open"
         case .contact:
             return isContactOpen ? "Open" : "Closed"
+        case .camera:
+            return "Live"
         }
     }
 

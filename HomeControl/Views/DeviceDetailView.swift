@@ -34,6 +34,13 @@ struct DeviceDetailView: View {
                 if current.isReachable && current.kind.isControllable {
                     Section("Control") { DeviceControls(device: binding) }
                 }
+                if current.kind == .camera {
+                    Section {
+                        CameraCard(device: current)
+                            .aspectRatio(16 / 9, contentMode: .fit)
+                    }
+                    .listRowInsets(EdgeInsets())
+                }
                 if current.kind == .contact {
                     Section { ContactView(device: current, since: store.lastChanged[current.id]) }
                         .listRowBackground(Color.clear)
@@ -76,7 +83,7 @@ struct DeviceControls: View {
             GarageControl(device: $device)
                 .frame(maxWidth: .infinity)
                 .listRowBackground(Color.clear)
-        case .contact:
+        case .contact, .camera:
             EmptyView()
         case .blinds:
             LevelControl(level: $device.value, look: .shutter, tint: device.kind.tint, icon: device.icon) {

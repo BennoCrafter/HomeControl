@@ -21,7 +21,7 @@ extension DeviceKind {
         case .thermostat: HMCharacteristicTypeTargetHeatingCooling
         case .lock: HMCharacteristicTypeTargetLockMechanismState
         case .garage: HMCharacteristicTypeTargetDoorState
-        case .blinds, .contact: nil
+        case .blinds, .contact, .camera: nil
         }
     }
 
@@ -31,7 +31,7 @@ extension DeviceKind {
         case .light: HMCharacteristicTypeBrightness
         case .thermostat: HMCharacteristicTypeTargetTemperature
         case .blinds: HMCharacteristicTypeTargetPosition
-        case .lock, .garage, .plug, .contact: nil
+        case .lock, .garage, .plug, .contact, .camera: nil
         }
     }
 
@@ -105,5 +105,14 @@ extension Device {
             writes.append((c, kind == .thermostat ? NSNumber(value: raw) : NSNumber(value: Int(raw.rounded()))))
         }
         return writes
+    }
+}
+
+extension Device {
+    /// Cameras aren't services; HomeKit hands them out as profiles of their accessory.
+    init(camera: HMCameraProfile, accessory: HMAccessory) {
+        self.init(id: camera.uniqueIdentifier, name: accessory.name, accessoryName: accessory.name,
+                  room: accessory.room?.name ?? "Default Room", kind: .camera,
+                  isReachable: accessory.isReachable, hasValue: false)
     }
 }

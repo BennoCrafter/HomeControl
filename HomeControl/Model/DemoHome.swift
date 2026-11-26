@@ -31,6 +31,7 @@ enum DemoHome {
                    hasValue: false),
             Device(id: id("Garage Door"), name: "Garage Door", accessoryName: "Garage Door Opener", room: "Garage", kind: .garage,
                    isOn: true, currentState: 1),
+            Device(id: id("Front Yard"), name: "Front Yard", accessoryName: "Camera", room: "Hallway", kind: .camera, hasValue: false),
             Device(id: id("Garage Light"), name: "Garage Light", accessoryName: "Switch", room: "Garage", kind: .light,
                    hasValue: false),
         ]

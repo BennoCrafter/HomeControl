@@ -132,8 +132,14 @@ struct DashboardView: View {
                     seedIfNeeded(columns: columns)
                 }
                 #if DEBUG
-                // Screenshots: `-edit YES` starts in edit mode.
-                .task { isEditing = UserDefaults.standard.bool(forKey: "edit") }
+                // Screenshots: `-edit YES` starts in edit mode, `-open <name>` opens an item or group, `-folder <name>` a folder.
+                .task {
+                    guard folder == nil else { return }
+                    isEditing = UserDefaults.standard.bool(forKey: "edit")
+                    let defaults = UserDefaults.standard
+                    selected = (store.devices + store.groupDevices).first { $0.name == defaults.string(forKey: "open") }
+                    openedFolder = store.groups(.folder).first { $0.name == defaults.string(forKey: "folder") }
+                }
                 #endif
             }
             .background(HomeBackground())

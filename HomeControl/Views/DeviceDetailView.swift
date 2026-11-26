@@ -1,10 +1,17 @@
 import SwiftUI
 
+/// A glass sheet with one small header and the item's control in the middle; editing waits behind "…".
 struct DeviceDetailView: View {
     @Environment(HomeStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     let device: Device
     @Environment(\.itemPrefs) private var prefs
+    @State private var renaming = false
+    @State private var newName = ""
+    @State private var choosingIcon = false
+    @State private var grouping = false
+
+    private var homeID: String { store.currentHomeID ?? "" }
 
     var body: some View {
         if let group = store.group(for: device.id) {
@@ -18,50 +25,108 @@ struct DeviceDetailView: View {
         let binding = store.binding(for: device)
         let current = binding.wrappedValue
         return NavigationStack {
-            Form {
-                Section {
-                    VStack(spacing: 6) {
-                        Image(systemName: current.icon(prefs))
-                            .font(.system(size: 40))
-                            .foregroundStyle(current.isActive ? current.kind.tint : .secondary)
-                            .contentTransition(.symbolEffect(.replace))
-                            .frame(height: 52)
-                        Text(current.name).font(.title2.bold())
-                        if current.accessoryName != current.name {
-                            Text(current.accessoryName).foregroundStyle(.secondary)
-                        }
-                        Text("\(current.room) · \(current.status)")
-                            .foregroundStyle(.secondary)
-                            .contentTransition(.interpolate)
-                    }
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
-                    .animation(.smooth, value: current.status)
-                }
-                if current.isReachable && current.kind.isControllable {
-                    Section("Control") { DeviceControls(device: binding) }
-                }
-                if current.kind == .camera {
-                    Section {
+            ScrollView {
+                VStack(spacing: 24) {
+                    if !current.isReachable {
+                        ContentUnavailableView("No Response", systemImage: "exclamationmark.triangle",
+                                               description: Text("\(current.name) can't be reached. Check its power and network."))
+                    } else if current.kind == .camera {
                         CameraCard(device: current)
                             .aspectRatio(16 / 9, contentMode: .fit)
+                    } else if current.kind == .contact {
+                        ContactView(device: current, since: store.lastChanged[current.id])
+                    } else {
+                        DeviceControls(device: binding)
                     }
-                    .listRowInsets(EdgeInsets())
                 }
-                if current.kind == .contact {
-                    Section { ContactView(device: current, since: store.lastChanged[current.id]) }
-                        .listRowBackground(Color.clear)
-                }
+                .frame(maxWidth: 520)
+                .padding(.horizontal)
+                .padding(.vertical, 24)
+                .frame(maxWidth: .infinity)
             }
-            .formStyle(.grouped)
-            .navigationTitle(current.name)
+            .defaultScrollAnchor(.center, for: .alignment)
+            .containerBackground(.clear, for: .navigation) // let the sheet's glass through
+            .scrollBounceBehavior(.basedOnSize)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+                ToolbarItem(placement: .principal) { header(current) }
+                ToolbarItem(placement: .topBarLeading) { editMenu(current) }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done", systemImage: "xmark") { dismiss() }
+                }
+            }
+            .alert("Rename", isPresented: $renaming) {
+                TextField("Name", text: $newName)
+                Button("Rename") {
+                    let name = newName.trimmingCharacters(in: .whitespaces)
+                    if !name.isEmpty { store.rename(current, to: name) }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Also renames it in Apple Home and for Siri.")
+            }
+            .sheet(isPresented: $choosingIcon) {
+                IconPicker(title: current.name, current: prefs[current.id]?.icon, tint: current.kind.tint) { icon in
+                    Prefs.update(item: current.id, in: homeID) { $0.icon = icon }
+                }
+            }
+            .sheet(isPresented: $grouping) {
+                GroupEditor(kind: .group, preselected: [current.id]).environment(store)
             }
         }
+        // Below full height the sheet stays glass and the home shows through; full height turns it opaque.
+        .presentationDetents([.fraction(0.72), .large])
         .presentationSizing(.page) // the default form sheet on Mac/iPad is too short for the dial
+    }
+
+    /// Icon, name, and room with state, in one line's height.
+    private func header(_ current: Device) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: current.icon(prefs))
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(current.isActive ? AnyShapeStyle(.white) : AnyShapeStyle(.secondary))
+                .frame(width: 30, height: 30)
+                .background(current.isActive ? AnyShapeStyle(current.kind.tint.gradient) : AnyShapeStyle(.quaternary), in: .circle)
+                .contentTransition(.symbolEffect(.replace))
+            VStack(alignment: .leading, spacing: 0) {
+                Text(current.name).font(.headline).lineLimit(1).minimumScaleFactor(0.7)
+                Text("\(current.room) · \(current.status)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .contentTransition(.numericText())
+            }
+        }
+        .animation(.smooth, value: current.status)
+    }
+
+    private func editMenu(_ current: Device) -> some View {
+        let pref = prefs[current.id]
+        return Menu {
+            Button("Rename…", systemImage: "pencil") {
+                newName = current.name
+                renaming = true
+            }
+            Picker(selection: Binding(get: { current.room }, set: { store.move(current, to: $0) })) {
+                ForEach(store.allRooms, id: \.self) { Text($0).tag($0) }
+            } label: {
+                Label("Room", systemImage: "square.split.bottomrightquarter")
+            }
+            .pickerStyle(.menu)
+            Button("Change Icon", systemImage: "square.grid.2x2") { choosingIcon = true }
+            Divider()
+            Button(pref?.isPinned == true ? "Unpin" : "Pin to Top", systemImage: pref?.isPinned == true ? "pin.slash" : "pin") {
+                Prefs.update(item: current.id, in: homeID) { $0.isPinned.toggle() }
+            }
+            Button(pref?.isHidden == true ? "Show" : "Hide", systemImage: pref?.isHidden == true ? "eye" : "eye.slash") {
+                Prefs.update(item: current.id, in: homeID) { $0.isHidden.toggle() }
+            }
+            if current.kind != .camera {
+                Button("Group With…", systemImage: "square.stack.3d.up") { grouping = true }
+            }
+        } label: {
+            Label("Edit", systemImage: "ellipsis")
+        }
     }
 }
 
@@ -81,8 +146,13 @@ struct DeviceControls: View {
                 .frame(maxWidth: .infinity)
                 .listRowBackground(Color.clear)
         case .thermostat:
-            Toggle("Heating", isOn: $device.isOn)
-            Stepper("Target \(Device.celsius(device.value))", value: $device.value, in: 10...30, step: 0.5)
+            VStack(spacing: 14) {
+                Toggle("Heating", isOn: $device.isOn)
+                Divider()
+                Stepper("Target \(Device.celsius(device.value))", value: $device.value, in: 10...30, step: 0.5)
+            }
+            .padding()
+            .background(.regularMaterial, in: .rect(cornerRadius: 20, style: .continuous))
         case .lock:
             LockControl(device: $device)
                 .frame(maxWidth: .infinity)

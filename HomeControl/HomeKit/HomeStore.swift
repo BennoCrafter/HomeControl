@@ -269,9 +269,53 @@ final class HomeStore: NSObject {
 }
 
 extension HomeStore {
+    private var home: HMHome? {
+        manager?.homes.first { $0.uniqueIdentifier.uuidString == currentHomeID }
+    }
+
+    /// Every room an item can move to, including empty ones.
+    var allRooms: [String] {
+        guard !isDemo, let home else { return rooms }
+        return home.rooms.map(\.name)
+    }
+
+    /// Renames it in Apple Home too, so Siri and the Home app use the new name.
+    func rename(_ device: Device, to name: String) {
+        guard let i = devices.firstIndex(where: { $0.id == device.id }) else { return }
+        devices[i].name = name
+        guard !isDemo, let service = services[device.id] else { return }
+        Task {
+            do {
+                try await service.updateName(name)
+            } catch {
+                message = "\(device.name): \(error.localizedDescription)"
+            }
+            refresh(service)
+        }
+    }
+
+    /// Moves the whole accessory: HomeKit puts accessories in rooms, not single services.
+    func move(_ device: Device, to roomName: String) {
+        guard let i = devices.firstIndex(where: { $0.id == device.id }) else { return }
+        guard !isDemo else {
+            devices[i].room = roomName
+            return
+        }
+        guard let service = services[device.id], let accessory = service.accessory,
+              let home, let room = home.rooms.first(where: { $0.name == roomName }) else { return }
+        Task {
+            do {
+                try await home.assignAccessory(accessory, to: room)
+            } catch {
+                message = "\(device.name): \(error.localizedDescription)"
+            }
+            accessory.services.forEach(refresh)
+        }
+    }
+
     /// Apple's own screen for inviting people to the home and setting what they may do.
     func manageMembers() {
-        guard let home = manager?.homes.first(where: { $0.uniqueIdentifier.uuidString == currentHomeID }) else { return }
+        guard let home else { return }
         home.manageUsers { error in
             if let error { logger.error("Managing members failed: \(error)") }
         }

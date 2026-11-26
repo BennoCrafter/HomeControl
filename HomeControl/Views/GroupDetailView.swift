@@ -14,21 +14,6 @@ struct GroupDetailView: View {
         let device = store.groupDevices.first { $0.id == group.deviceID }
         NavigationStack {
             Form {
-                Section {
-                    VStack(spacing: 6) {
-                        Image(systemName: device?.icon ?? "square.stack.3d.up.fill")
-                            .font(.system(size: 40))
-                            .foregroundStyle(device?.isActive == true ? device!.kind.tint : .secondary)
-                            .contentTransition(.symbolEffect(.replace))
-                            .frame(height: 52)
-                        Text(group.name).font(.title2.bold())
-                        Text("\(members.count) items · \(members.count(where: \.isActive)) on")
-                            .foregroundStyle(.secondary)
-                            .contentTransition(.numericText())
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
-                }
                 if !remote.isEmpty {
                     Section { RemoteView(buttons: remote) }
                         .listRowBackground(Color.clear)
@@ -40,9 +25,19 @@ struct GroupDetailView: View {
                 }
             }
             .formStyle(.grouped)
-            .navigationTitle(group.name)
+            .scrollContentBackground(.hidden)
+            .containerBackground(.clear, for: .navigation)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .principal) {
+                    VStack(spacing: 0) {
+                        Label(group.name, systemImage: device?.icon ?? "square.stack.3d.up.fill").font(.headline).lineLimit(1)
+                        Text("\(members.count) items · \(members.count(where: \.isActive)) on")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .contentTransition(.numericText())
+                    }
+                }
                 ToolbarItem(placement: .cancellationAction) { Button("Edit") { editing = true } }
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
             }
@@ -51,6 +46,7 @@ struct GroupDetailView: View {
             }
             .onChange(of: store.group(id: group.id) == nil) { _, gone in if gone { dismiss() } }
         }
+        .presentationDetents([.fraction(0.72), .large])
         .presentationSizing(.page)
     }
 }

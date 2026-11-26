@@ -9,13 +9,14 @@ struct RoomView: View {
 
     var body: some View {
         ScrollView {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: 12)], spacing: 12) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), spacing: 12)], spacing: 12) {
                 ForEach(devices) { device in
                     DeviceTile(device: device, showRoom: showRoom) { selected = device }
                 }
             }
             .padding()
         }
+        .background(Color(.systemGroupedBackground))
         .navigationTitle(title)
         .sheet(item: $selected) { DeviceDetailView(device: $0).environment(store) }
     }

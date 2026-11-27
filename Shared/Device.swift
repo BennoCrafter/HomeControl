@@ -136,6 +136,23 @@ struct Device: Identifiable, Codable, Hashable {
         return device
     }
 
+    /// Brightness where 0 means off, or the blinds' position: what a slider or dial shows.
+    var level: Double {
+        kind == .light ? (isOn ? value : 0) : value
+    }
+
+    /// Dragging a light to the bottom turns it off and dragging up turns it on.
+    func setting(level: Double) -> Device {
+        var device = self
+        if kind == .light {
+            device.isOn = level > 0.005
+            if device.isOn { device.value = level }
+        } else {
+            device.value = level
+        }
+        return device
+    }
+
     /// Switched on or off the way a tap on the icon would.
     func setting(active: Bool) -> Device {
         isActive == active ? self : toggled()

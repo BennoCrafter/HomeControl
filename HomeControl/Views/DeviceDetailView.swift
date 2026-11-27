@@ -140,11 +140,12 @@ struct DeviceDetailView: View {
 
 struct DeviceControls: View {
     @Binding var device: Device
+    @Environment(HomeStore.self) private var store
 
     var body: some View {
         switch device.kind {
         case .light where device.hasValue:
-            LevelControl(level: brightness, look: .light, tint: device.kind.tint) {
+            LevelControl(level: level, look: .light, tint: device.kind.tint, live: stream) {
                 device.isOn.toggle()
             }
             .frame(maxWidth: .infinity)
@@ -172,7 +173,7 @@ struct DeviceControls: View {
         case .contact, .camera:
             EmptyView()
         case .blinds:
-            LevelControl(level: $device.value, look: .shutter, tint: device.kind.tint) {
+            LevelControl(level: level, look: .shutter, tint: device.kind.tint, live: stream) {
                 device.value = device.value > 0 ? 0 : 1
             }
             .frame(maxWidth: .infinity)
@@ -186,17 +187,12 @@ struct DeviceControls: View {
         }
     }
 
-    /// Brightness where 0 means off, so dragging to the bottom turns the light off and dragging up turns it on.
-    private var brightness: Binding<Double> {
-        Binding(
-            get: { device.isOn ? device.value : 0 },
-            set: { level in
-                var updated = device
-                updated.isOn = level > 0.005
-                if updated.isOn { updated.value = level }
-                device = updated
-            }
-        )
+    private var level: Binding<Double> {
+        Binding(get: { device.level }, set: { device = device.setting(level: $0) })
+    }
+
+    private func stream(_ level: Double) {
+        store.stream(device.setting(level: level))
     }
 }
 

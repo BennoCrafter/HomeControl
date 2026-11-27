@@ -197,18 +197,17 @@ struct MemberRow: View {
                 .buttonStyle(.plain)
             }
             if current.isReachable, current.hasValue, current.kind == .light || current.kind == .blinds {
-                let level = level(binding)
-                Slider(value: Binding(get: { draft ?? level.wrappedValue }, set: { value in
+                Slider(value: Binding(get: { draft ?? current.level }, set: { value in
                     release?.cancel()
                     draft = value
-                    // Same 0.05 s as LevelControl: the store keeps one write in flight, so this only limits redraws
+                    // Same as LevelControl: HomeKit only while dragging, so the app doesn't redraw on every step.
                     if Date.now.timeIntervalSince(lastSent) > 0.05 {
                         lastSent = .now
-                        level.wrappedValue = value
+                        store.stream(binding.wrappedValue.setting(level: value))
                     }
                 }), in: 0 ... 1) { editing in
                     guard !editing, let draft else { return }
-                    level.wrappedValue = draft
+                    binding.wrappedValue = binding.wrappedValue.setting(level: draft)
                     release = Task {
                         try? await Task.sleep(for: .seconds(1.2))
                         if !Task.isCancelled { self.draft = nil }
@@ -224,22 +223,6 @@ struct MemberRow: View {
                 binding.wrappedValue = binding.wrappedValue.toggled()
                 toggles += 1
             }
-        }
-    }
-
-    /// Brightness where 0 is off, or the blinds' position.
-    private func level(_ device: Binding<Device>) -> Binding<Double> {
-        Binding {
-            device.wrappedValue.kind == .light ? (device.wrappedValue.isOn ? device.wrappedValue.value : 0) : device.wrappedValue.value
-        } set: { level in
-            var updated = device.wrappedValue
-            if updated.kind == .light {
-                updated.isOn = level > 0.005
-                if updated.isOn { updated.value = level }
-            } else {
-                updated.value = level
-            }
-            device.wrappedValue = updated
         }
     }
 }

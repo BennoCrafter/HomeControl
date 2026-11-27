@@ -15,6 +15,8 @@ struct LevelControl: View {
     @Binding var level: Double
     let look: Look
     let tint: Color
+    /// Gets the drag's values instead of `level`, which is set once on release; nil sets `level` throttled.
+    var live: ((Double) -> Void)?
     let onTap: () -> Void
 
     @AppStorage("controlStyle.light") private var lightStyle: ControlStyle = .dial
@@ -29,6 +31,8 @@ struct LevelControl: View {
     @State private var dialAreaWidth: CGFloat = 0
     /// The level when a dial drag began off the ring; such drags move it linearly, sideways.
     @State private var linearBase: Double?
+    /// Decided by a dial drag's first movement: along the ring, or a sideways slide.
+    @State private var dialFollowsRing: Bool?
 
     private static let spring = Spring(duration: 0.55, bounce: 0.35)
     /// Drags may start this far outside the control, and anywhere across the row, so the finger needn't hit it.
@@ -85,7 +89,7 @@ struct LevelControl: View {
         // 0.05 s only limits redraws: the store keeps one HomeKit write in flight and skips stale values; release sends the last
         if Date.now.timeIntervalSince(lastSent) > 0.05 {
             lastSent = .now
-            level = value
+            if let live { live(value) } else { level = value }
         }
     }
 
@@ -131,6 +135,7 @@ struct LevelControl: View {
         }
         draft = nil
         linearBase = nil
+        dialFollowsRing = nil
     }
 
     // MARK: Pill
@@ -228,8 +233,11 @@ struct LevelControl: View {
             DragGesture(minimumDistance: 4)
                 .onChanged { gesture in
                     let startDistance = hypot(gesture.startLocation.x - dialAreaWidth / 2, gesture.startLocation.y - (Self.dragSlop + size / 2))
-                    // Off the ring (centre, sides): right is up, the dial's width spans 0...100%.
-                    if abs(startDistance - radius) > lineWidth {
+                    // Off the ring (centre, sides), or a mostly sideways start on it: right is up, the dial's width spans 0...100%.
+                    if dialFollowsRing == nil {
+                        dialFollowsRing = abs(startDistance - radius) <= lineWidth && abs(gesture.translation.width) < abs(gesture.translation.height) * 1.5
+                    }
+                    if dialFollowsRing == false {
                         if linearBase == nil { linearBase = draft ?? level }
                         drag(to: (linearBase ?? 0) + gesture.translation.width / size)
                         return

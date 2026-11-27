@@ -425,12 +425,26 @@ final class HomeStore: NSObject {
             return []
         }
         guard let service = services[new.id] else { return [] }
-        let id = new.id
-        var sent = devices[i]
+        let old = devices[i]
         devices[i] = new
+        return [write(new, from: old, on: service)]
+    }
+
+    /// While a control is dragged: to HomeKit only. Changing `devices` redrew the whole app on every step, which made
+    /// the drag stutter; the release goes through `update` like any change.
+    func stream(_ new: Device) {
+        guard !isDemo, group(for: new.id) == nil, let device = devices.first(where: { $0.id == new.id }),
+              let service = services[new.id] else { return }
+        write(new, from: device, on: service)
+    }
+
+    @discardableResult
+    private func write(_ new: Device, from old: Device, on service: HMService) -> Task<Void, any Error> {
+        let id = new.id
+        var sent = old
         lastWrite[id] = .now
         writeTargets[id] = new
-        if let running = writing[id] { return [running] }
+        if let running = writing[id] { return running }
         let task = Task {
             defer {
                 writing[id] = nil
@@ -449,7 +463,7 @@ final class HomeStore: NSObject {
             }
         }
         writing[id] = task
-        return [task]
+        return task
     }
 
     /// Demo accessories react like real ones: the garage door takes a moment to move.

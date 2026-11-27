@@ -84,6 +84,8 @@ struct InviteView: View {
                 .padding()
                 .frame(maxWidth: 520)
                 .frame(maxWidth: .infinity)
+                // Apple's screen comes up over this sheet with a see-through bar; our content showed through it.
+                .opacity(homeKitOpen ? 0 : 1)
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(homeKitOpen ? .hidden : .visible, for: .navigationBar)

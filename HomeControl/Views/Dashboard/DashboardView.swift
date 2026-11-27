@@ -427,7 +427,8 @@ struct DashboardView: View {
         Menu {
             Button("Settings…", systemImage: "gearshape") { openSettings() }
             Button("Edit Dashboard", systemImage: "square.grid.2x2") { startEditing() }
-            if !store.isDemo {
+            // Once shared, the people are in; the invitation lives on in the system's sharing screens.
+            if !store.isDemo, store.homeShare() == nil {
                 Button("Invite to Home…", systemImage: "person.2.badge.plus") { inviting = true }
             }
             Menu("Dashboard", systemImage: "person.crop.circle") {

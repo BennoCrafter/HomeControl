@@ -58,6 +58,9 @@ struct RoomCard: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(Color(.secondarySystemGroupedBackground).opacity(tileOpacity), in: .rect(cornerRadius: 20, style: .continuous))
         .overlay { RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(.white.opacity(0.08)) }
+        // The empty space opens it too; the toggles are buttons and keep their taps.
+        .contentShape(.rect(cornerRadius: 20, style: .continuous))
+        .onTapGesture(perform: open)
         .sensoryFeedback(.impact(weight: .medium), trigger: toggles)
     }
 

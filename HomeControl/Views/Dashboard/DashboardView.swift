@@ -15,6 +15,7 @@ struct DashboardView: View {
     @State private var openedFolder: DeviceGroup?
     @State private var inviting = false
     @State private var openedCollection: DeviceGroup?
+    @State private var openedGroup: DeviceGroup?
     @State private var editingCollection: DeviceGroup?
     @State private var addingCollection = false
     @State private var namingFolder = false
@@ -145,7 +146,7 @@ struct DashboardView: View {
             .background(HomeBackground())
             .navigationTitle(folder?.name ?? store.homeName)
             .navigationBarTitleDisplayMode(.inline)
-            // An item opens on top, to switch and dismiss; a room or collection is a place to go into.
+            // An item opens on top, to switch and dismiss; a room, group or collection is a place to go into.
             .sheet(item: $selected) { DeviceDetailView(device: $0).environment(store) }
             .navigationDestination(item: Binding(get: { openedRoom.map(IdentifiedString.init) }, set: { openedRoom = $0?.id })) { room in
                 RoomView(title: room.id, devices: store.items(in: room.id), showRoom: false)
@@ -155,6 +156,7 @@ struct DashboardView: View {
                     .environment(store)
                     .navigationTransition(.zoom(sourceID: folder.id, in: zoom))
             }
+            .navigationDestination(item: $openedGroup) { GroupDetailView(group: $0, isPushed: true) }
             .navigationDestination(item: $openedCollection) { collection in
                 RoomView(title: collection.name, devices: items(of: collection), showRoom: true)
             }
@@ -320,10 +322,10 @@ struct DashboardView: View {
                 // Small, it's a tile like any item; bigger, every member gets a button.
                 if let group = group(card), let device = store.groupDevices.first(where: { $0.id == group.deviceID }) {
                     if card.height == 1 {
-                        DeviceTile(device: device, showRoom: false) { selected = device }
+                        DeviceTile(device: device, showRoom: false) { openedGroup = group }
                     } else {
                         RoomCard(title: group.name, icon: device.icon, items: store.members(of: group),
-                                 large: card.height > 2 || card.width >= 4) { selected = device } openItem: { selected = $0 }
+                                 large: card.height > 2 || card.width >= 4) { openedGroup = group } openItem: { selected = $0 }
                     }
                 }
             case .collection:

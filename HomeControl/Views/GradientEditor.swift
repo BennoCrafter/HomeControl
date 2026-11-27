@@ -10,7 +10,9 @@ struct GradientEditor: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                GrainyGradient(style: style)
+                // Phone-shaped, drawn like the real background.
+                background(style)
+                    .aspectRatio(ScreenPreview<EmptyView>.screen, contentMode: .fit)
                     .clipShape(.rect(cornerRadius: 28, style: .continuous))
                     .overlay {
                         RoundedRectangle(cornerRadius: 28, style: .continuous).strokeBorder(.white.opacity(0.15))
@@ -114,7 +116,7 @@ struct GradientEditor: View {
             withAnimation(.smooth(duration: 0.4)) { style.pattern = pattern }
         } label: {
             VStack(spacing: 6) {
-                GrainyGradient(style: preview)
+                background(preview)
                     .frame(width: 70, height: 96)
                     .clipShape(.rect(cornerRadius: 14, style: .continuous))
                     .overlay {
@@ -126,6 +128,13 @@ struct GradientEditor: View {
         }
         .buttonStyle(PressScale())
         .animation(.spring(duration: 0.3, bounce: 0.5), value: selected)
+    }
+
+    /// The style drawn exactly as the home's background, screen-sized and shrunk to fit.
+    private func background(_ style: GradientStyle) -> some View {
+        var look = Appearance(id: "", background: "custom")
+        look.gradient = style
+        return ScreenPreview { HomeBackground().environment(\.appearance, look) }
     }
 
     private func slider(_ title: LocalizedStringKey, value: Binding<Double>, systemImage: String) -> some View {

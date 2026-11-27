@@ -79,6 +79,27 @@ struct HomeBackground: View {
     }
 }
 
+/// Draws a background at the screen's size, then shrinks it into the frame: grain, blur and dimming look as they will behind the home.
+struct ScreenPreview<Content: View>: View {
+    @ViewBuilder let content: Content
+
+    static var screen: CGSize {
+        (UIApplication.shared.connectedScenes.first as? UIWindowScene)?.screen.bounds.size ?? CGSize(width: 402, height: 874)
+    }
+
+    var body: some View {
+        GeometryReader { geometry in
+            let screen = Self.screen
+            let scale = max(geometry.size.width / screen.width, geometry.size.height / screen.height)
+            content
+                .frame(width: screen.width, height: screen.height)
+                .scaleEffect(scale)
+                .frame(width: geometry.size.width, height: geometry.size.height)
+        }
+        .clipped()
+    }
+}
+
 /// Settings for the home's look: a preset or a photo, and how see-through the tiles are.
 struct AppearanceSection: View {
     let homeID: String
@@ -93,13 +114,13 @@ struct AppearanceSection: View {
                 HStack(spacing: 12) {
                     ForEach(BackgroundPreset.allCases) { preset in
                         swatch(preset.title, selected: appearance.background == preset.rawValue) {
-                            preset.view
+                            ScreenPreview { HomeBackground().environment(\.appearance, looking { $0.background = preset.rawValue }) }
                         } action: {
                             save { $0.background = preset.rawValue }
                         }
                     }
                     swatch("Custom", selected: appearance.background == "custom") {
-                        GrainyGradient(style: appearance.gradient)
+                        ScreenPreview { HomeBackground().environment(\.appearance, looking { $0.background = "custom" }) }
                             .overlay(alignment: .bottomTrailing) {
                                 Image(systemName: "slider.horizontal.3")
                                     .font(.caption.bold())
@@ -160,10 +181,17 @@ struct AppearanceSection: View {
             .buttonStyle(PressScale())
     }
 
+    /// The current look with one change, for a swatch.
+    private func looking(_ change: (inout Appearance) -> Void) -> Appearance {
+        var look = appearance
+        change(&look)
+        return look
+    }
+
     @ViewBuilder
     private var photoPreview: some View {
-        if let data = appearance.photo, let image = UIImage(data: data) {
-            Image(uiImage: image).resizable().scaledToFill()
+        if appearance.photo != nil {
+            ScreenPreview { HomeBackground().environment(\.appearance, looking { $0.background = "photo" }) }
         } else {
             Color(.tertiarySystemFill).overlay { Image(systemName: "photo.badge.plus").font(.title2) }
         }

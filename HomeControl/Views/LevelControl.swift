@@ -28,6 +28,8 @@ struct LevelControl: View {
     @State private var lastLocalChange = Date.distantPast
     @State private var springTask: Task<Void, Never>?
     @State private var dialAreaWidth: CGFloat = 0
+    /// The level when a dial drag began off the ring; such drags move it linearly, sideways.
+    @State private var linearBase: Double?
 
     private static let spring = Spring(duration: 0.55, bounce: 0.35)
     /// Drags may start this far outside the control, and anywhere across the row, so the finger needn't hit it.
@@ -129,6 +131,7 @@ struct LevelControl: View {
             lastLocalChange = .now
         }
         draft = nil
+        linearBase = nil
     }
 
     private var badge: some View {
@@ -237,6 +240,13 @@ struct LevelControl: View {
         .highPriorityGesture(
             DragGesture(minimumDistance: 4)
                 .onChanged { gesture in
+                    let startDistance = hypot(gesture.startLocation.x - dialAreaWidth / 2, gesture.startLocation.y - (Self.dragSlop + size / 2))
+                    // Off the ring (centre, sides): right is up, the dial's width spans 0...100%.
+                    if abs(startDistance - radius) > lineWidth {
+                        if linearBase == nil { linearBase = draft ?? level }
+                        drag(to: (linearBase ?? 0) + gesture.translation.width / size)
+                        return
+                    }
                     let dx = gesture.location.x - dialAreaWidth / 2, dy = gesture.location.y - (Self.dragSlop + size / 2)
                     guard hypot(dx, dy) > radius * 0.4 else { return }
                     // The knob points where the finger is; crossing the bottom gap must not flip between 0 and 1.

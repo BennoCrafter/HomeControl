@@ -4,7 +4,7 @@ enum ControlStyle: String, CaseIterable, Identifiable {
     case pill, dial
 
     var id: Self { self }
-    var title: String { self == .pill ? "Pill" : "Dial" }
+    var title: String { self == .pill ? String(localized: "Pill") : String(localized: "Dial") }
 }
 
 /// Big touch control for a 0...1 level (light brightness or shutter opening), drawn as a pill or a dial.
@@ -43,8 +43,8 @@ struct LevelControl: View {
     private var label: String {
         let value = labelValue
         switch look {
-        case .light: return value == 0 ? "Off" : value.formatted(.percent.precision(.fractionLength(0)))
-        case .shutter: return value == 0 ? "Closed" : "\(value.formatted(.percent.precision(.fractionLength(0)))) open"
+        case .light: return value == 0 ? String(localized: "Off") : value.formatted(.percent.precision(.fractionLength(0)))
+        case .shutter: return value == 0 ? String(localized: "Closed") : String(localized: "\(value.formatted(.percent.precision(.fractionLength(0)))) open")
         }
     }
 

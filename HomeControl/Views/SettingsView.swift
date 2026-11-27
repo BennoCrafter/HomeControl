@@ -89,10 +89,10 @@ struct SettingsView: View {
 
     private var accessText: String {
         switch store.access {
-        case .notRequested: "Not requested"
-        case .pending: "Waiting…"
-        case .authorized: "Allowed"
-        case .denied: "Denied"
+        case .notRequested: String(localized: "Not requested")
+        case .pending: String(localized: "Waiting…")
+        case .authorized: String(localized: "Allowed")
+        case .denied: String(localized: "Denied")
         }
     }
 }

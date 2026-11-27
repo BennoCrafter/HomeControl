@@ -62,7 +62,7 @@ struct ItemHistory: View {
         let format = Date.FormatStyle().day().month(.abbreviated).hour().minute()
         switch event.notSeenSince {
         case nil: return event.date.formatted(format)
-        case .distantPast: return "before \(event.date.formatted(format))"
+        case .distantPast: return String(localized: "before \(event.date.formatted(format))")
         case let start?:
             // The end's day only when it differs: "3 Nov 14:02 – 15:10".
             let end = Calendar.current.isDate(start, inSameDayAs: event.date) ? event.date.formatted(date: .omitted, time: .shortened) : event.date.formatted(format)

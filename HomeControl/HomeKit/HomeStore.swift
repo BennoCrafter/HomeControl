@@ -78,7 +78,7 @@ final class HomeStore: NSObject {
         guard manager == nil else { return }
         UserDefaults.standard.set(true, forKey: Self.requestedKey)
         access = .pending
-        if !isDemo { message = "Loading Home…" }
+        if !isDemo { message = String(localized: "Loading Home…") }
         let manager = HMHomeManager()
         manager.delegate = self
         self.manager = manager
@@ -199,18 +199,18 @@ final class HomeStore: NSObject {
         guard let manager else {
             (currentHomeID, homeKitID) = (nil, nil)
             devices = []
-            message = "Allow Home access in Settings to see your accessories."
+            message = String(localized: "Allow Home access in Settings to see your accessories.")
             return
         }
         if access == .denied {
             (currentHomeID, homeKitID) = (nil, nil)
-            message = "Home access denied. Enable it in Settings › Privacy › HomeKit."
+            message = String(localized: "Home access denied. Enable it in Settings › Privacy › HomeKit.")
             devices = []
             return
         }
         guard let home = manager.homes.first(where: { $0.uniqueIdentifier.uuidString == selected }) ?? manager.homes.first else {
             (currentHomeID, homeKitID) = (nil, nil)
-            message = "No home found. Set one up in the Home app or try the Demo Home."
+            message = String(localized: "No home found. Set one up in the Home app or try the Demo Home.")
             devices = []
             return
         }

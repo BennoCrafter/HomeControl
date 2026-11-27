@@ -69,46 +69,46 @@ struct Device: Identifiable, Codable, Hashable {
     }
 
     var status: String {
-        guard isReachable else { return "No Response" }
+        guard isReachable else { return String(localized: "No Response") }
         switch kind {
         case .light:
-            guard isOn else { return "Off" }
-            return hasValue ? "On · \(value.formatted(.percent.precision(.fractionLength(0))))" : "On"
+            guard isOn else { return String(localized: "Off") }
+            return hasValue ? String(localized: "On · \(value.formatted(.percent.precision(.fractionLength(0))))") : String(localized: "On")
         case .plug:
-            return isOn ? "On" : "Off"
+            return isOn ? String(localized: "On") : String(localized: "Off")
         case .thermostat:
             let now = currentValue.map(Self.celsius) ?? "–"
-            return isOn ? "\(now) → \(Self.celsius(value))" : "Off · \(now)"
+            return isOn ? "\(now) → \(Self.celsius(value))" : String(localized: "Off · \(now)")
         case .lock:
-            if currentState == 2 { return "Jammed" }
-            if let state = currentState, state <= 1, (state == 1) != isOn { return isOn ? "Locking…" : "Unlocking…" }
-            return isOn ? "Locked" : "Unlocked"
+            if currentState == 2 { return String(localized: "Jammed") }
+            if let state = currentState, state <= 1, (state == 1) != isOn { return isOn ? String(localized: "Locking…") : String(localized: "Unlocking…") }
+            return isOn ? String(localized: "Locked") : String(localized: "Unlocked")
         case .garage:
-            if isObstructed { return "Obstructed" }
+            if isObstructed { return String(localized: "Obstructed") }
             switch currentState {
-            case 0: return "Open"
-            case 1: return "Closed"
-            case 2: return "Opening…"
-            case 3: return "Closing…"
-            case 4: return "Stopped"
-            default: return isOn ? "Closed" : "Open"
+            case 0: return String(localized: "Open")
+            case 1: return String(localized: "Closed")
+            case 2: return String(localized: "Opening…")
+            case 3: return String(localized: "Closing…")
+            case 4: return String(localized: "Stopped")
+            default: return isOn ? String(localized: "Closed") : String(localized: "Open")
             }
         case .blinds:
             let position = currentValue ?? value
-            return position == 0 ? "Closed" : "\(position.formatted(.percent.precision(.fractionLength(0)))) open"
+            return position == 0 ? String(localized: "Closed") : String(localized: "\(position.formatted(.percent.precision(.fractionLength(0)))) open")
         case .contact:
-            return isContactOpen ? "Open" : "Closed"
+            return isContactOpen ? String(localized: "Open") : String(localized: "Closed")
         case .camera:
-            return "Camera"
+            return String(localized: "Camera")
         }
     }
 
     /// What `isActive` means for this kind, for "Open for 5 minutes" and the history.
     func stateName(active: Bool) -> String {
         switch kind {
-        case .lock: active ? "Locked" : "Unlocked"
-        case .garage, .blinds, .contact: active ? "Open" : "Closed"
-        default: active ? "On" : "Off"
+        case .lock: active ? String(localized: "Locked") : String(localized: "Unlocked")
+        case .garage, .blinds, .contact: active ? String(localized: "Open") : String(localized: "Closed")
+        default: active ? String(localized: "On") : String(localized: "Off")
         }
     }
 

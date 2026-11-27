@@ -44,9 +44,12 @@ struct RoomCard: View {
             .buttonStyle(PressScale(scale: 0.97))
             GeometryReader { geometry in
                 // Automatic: a fixed icon size, as many as fit; otherwise that many, sized to the width.
+                // Never taller than the card has room for, or a short card (the Rooms tab's) cut the icons off.
                 let size: CGFloat = iconsPerRow == 0 ? (large ? 54 : 42)
-                    : max(24, (geometry.size.width - 8 * CGFloat(iconsPerRow - 1)) / CGFloat(iconsPerRow))
-                let perRow = iconsPerRow == 0 ? max(1, Int((geometry.size.width + 8) / (size + 8))) : iconsPerRow
+                    : max(24, min((geometry.size.width - 8 * CGFloat(iconsPerRow - 1)) / CGFloat(iconsPerRow),
+                                  geometry.size.height - (large ? 24 : 0)))
+                // As many as fit: when the height capped the size, more than asked for fit in a row.
+                let perRow = max(1, Int((geometry.size.width + 8) / (size + 8) + 0.01))
                 let rows = max(1, Int((geometry.size.height + 8) / (size + (large ? 24 : 8))))
                 LazyVGrid(columns: Array(repeating: GridItem(.fixed(size), spacing: 8), count: perRow), alignment: .leading, spacing: 8) {
                     ForEach(devices.prefix(perRow * rows)) { device in

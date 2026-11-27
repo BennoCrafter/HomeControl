@@ -86,6 +86,8 @@ struct ContentView: View {
         #if DEBUG
         // Screenshots: `-tab Rooms` starts on that tab.
         .task { if let start = UserDefaults.standard.string(forKey: "tab") { tab = start } }
+        // Screenshots: `-settings YES` opens Settings.
+        .task { showingSettings = UserDefaults.standard.bool(forKey: "settings") }
         // Screenshots: `-gradientEditor YES` opens the background editor.
         .sheet(isPresented: .constant(UserDefaults.standard.bool(forKey: "gradientEditor"))) {
             GradientEditor(style: appearance.gradient) { _ in }
@@ -166,15 +168,15 @@ struct ContentView: View {
                          showRoom: room == "All")
             }
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("All Devices", systemImage: "square.grid.3x3.fill") { roomPath.append("All") }
-                }
                 #if !targetEnvironment(macCatalyst)
-                // On the Mac, Settings lives in the app menu (⌘,).
-                ToolbarItem(placement: .topBarTrailing) {
+                // Leading, like the dashboard's; on the Mac, Settings lives in the app menu (⌘,).
+                ToolbarItem(placement: .topBarLeading) {
                     Button("Settings", systemImage: "gearshape") { showingSettings = true }
                 }
                 #endif
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("All Devices", systemImage: "square.grid.3x3.fill") { roomPath.append("All") }
+                }
             }
             .sheet(item: Binding(get: { iconRoom.map(IdentifiedString.init) }, set: { iconRoom = $0?.id })) { room in
                 IconPicker(title: room.id, current: roomIcons[room.id], tint: .accentColor) { icon in

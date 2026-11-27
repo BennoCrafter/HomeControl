@@ -64,13 +64,34 @@ struct SettingsView: View {
                     Picker("Shutters", selection: $shutterStyle) {
                         ForEach(ControlStyle.allCases) { Text($0.title).tag($0) }
                     }
-                    Stepper(value: $iconsPerRow, in: 0 ... 8) {
-                        LabeledContent("Icons per Row on Cards", value: iconsPerRow == 0 ? String(localized: "Automatic") : "\(iconsPerRow)")
-                    }
                 } header: {
                     Text("Control Style")
                 } footer: {
-                    Text("How brightness and shutter position are adjusted in the device details, and how big the icons on room and group cards are: fewer per row are bigger.")
+                    Text("How brightness and shutter position are adjusted in the device details.")
+                }
+                Section {
+                    Stepper(value: $iconsPerRow.animation(.snappy), in: 0 ... 8) {
+                        HStack {
+                            Text("Icons per Row")
+                            Spacer()
+                            Text(iconsPerRow == 0 ? String(localized: "Auto") : "\(iconsPerRow)")
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
+                                .contentTransition(.numericText())
+                        }
+                        .lineLimit(1)
+                    }
+                    // The first room as it shows on the dashboard, following the stepper live.
+                    if let room = store.allRooms.first {
+                        RoomCard(title: room, icon: ContentView.icon(forRoom: room), items: store.items(in: room), large: false) {} openItem: { _ in }
+                            .frame(height: 160)
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
+                    }
+                } header: {
+                    Text("Cards")
+                } footer: {
+                    Text("Fewer icons per row make them bigger, on room and group cards.")
                 }
                 Section {
                     Button("Show Onboarding", systemImage: "sparkles") {

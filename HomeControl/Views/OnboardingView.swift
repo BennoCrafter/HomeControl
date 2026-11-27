@@ -65,7 +65,7 @@ struct OnboardingView: View {
 
             buttons
                 .padding(.horizontal, 32)
-                .padding(.bottom, 24)
+                .padding(.bottom, 4) // the home indicator's safe area already leaves room
                 .frame(maxWidth: 480)
         }
         .foregroundStyle(.white)

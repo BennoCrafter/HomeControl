@@ -105,6 +105,8 @@ struct AppearanceSection: View {
     let homeID: String
     @Environment(\.appearance) private var appearance
     @State private var photo: PhotosPickerItem?
+    /// A picked photo waiting in the editor.
+    @State private var editingPhoto: UIImage?
     @State private var opacity: Double?
     @State private var editingGradient = false
 
@@ -136,6 +138,11 @@ struct AppearanceSection: View {
                         Swatch(title: "Photo", selected: appearance.background == "photo", content: photoPreview)
                     }
                     .buttonStyle(PressScale())
+                    .contextMenu {
+                        if let data = appearance.photo, let image = UIImage(data: data) {
+                            Button("Edit Photo", systemImage: "crop") { editingPhoto = image }
+                        }
+                    }
                 }
                 .padding(.vertical, 6)
             }
@@ -150,18 +157,27 @@ struct AppearanceSection: View {
                 }
             }
             .onChange(of: photo) {
+                guard let photo else { return }
                 Task {
-                    guard let data = try? await photo?.loadTransferable(type: Data.self), let image = UIImage(data: data) else { return }
-                    // Stored downscaled: a 48 MP photo would bloat the database for a blurred backdrop.
-                    let small = image.preparingThumbnail(of: CGSize(width: 1600, height: 1600 * image.size.height / max(image.size.width, 1)))
-                    save {
-                        $0.photo = small?.jpegData(compressionQuality: 0.8)
-                        $0.background = "photo"
+                    self.photo = nil // so picking the same photo again opens the editor again
+                    guard let data = try? await photo.loadTransferable(type: Data.self), let image = UIImage(data: data) else { return }
+                    // Downscaled: a 48 MP photo would slow the editor and bloat the database for a backdrop.
+                    let side = 2000 / max(image.size.width, image.size.height, 1)
+                    editingPhoto = side < 1 ? image.preparingThumbnail(of: CGSize(width: image.size.width * side, height: image.size.height * side)) : image
+                }
+            }
+            .sheet(isPresented: Binding(get: { editingPhoto != nil }, set: { if !$0 { editingPhoto = nil } })) {
+                if let editingPhoto {
+                    PhotoEditor(image: editingPhoto) { edited in
+                        save {
+                            $0.photo = edited.jpegData(compressionQuality: 0.8)
+                            $0.background = "photo"
+                        }
                     }
                 }
             }
             VStack(alignment: .leading) {
-                LabeledContent("Tiles", value: (opacity ?? appearance.tileOpacity).formatted(.percent.precision(.fractionLength(0))))
+                LabeledContent("Opacity", value: (opacity ?? appearance.tileOpacity).formatted(.percent.precision(.fractionLength(0))))
                 Slider(value: Binding(get: { opacity ?? appearance.tileOpacity }, set: { opacity = $0 }), in: 0.1 ... 1) { editing in
                     if !editing, let opacity {
                         save { $0.tileOpacity = opacity }

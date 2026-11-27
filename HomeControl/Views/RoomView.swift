@@ -7,7 +7,6 @@ struct RoomView: View {
     let showRoom: Bool
     @Environment(\.itemPrefs) private var prefs
     @State private var selected: Device?
-    @State private var openedGroup: DeviceGroup?
     /// Hold the title to edit: hidden items show again, and tapping items picks them for a group.
     @State private var isSelecting = false
     @State private var picked: [UUID] = []
@@ -22,7 +21,7 @@ struct RoomView: View {
         ScrollView {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), spacing: 12)], spacing: 12) {
                 ForEach(shown) { device in
-                    DeviceTile(device: device, showRoom: showRoom) { open(device) }
+                    DeviceTile(device: device, showRoom: showRoom) { selected = device }
                         .overlay { if isSelecting { selectionOverlay(device) } }
                         .transition(.scale(scale: 0.6).combined(with: .opacity))
                 }
@@ -93,12 +92,6 @@ struct RoomView: View {
         }
         #endif
         .sheet(item: $selected) { DeviceDetailView(device: $0).environment(store) }
-        .navigationDestination(item: $openedGroup) { GroupDetailView(group: $0, isPushed: true) }
-    }
-
-    /// An item opens on top; a group is a place to go into.
-    private func open(_ device: Device) {
-        if let group = store.group(for: device.id) { openedGroup = group } else { selected = device }
     }
 
     private func setEditing(_ editing: Bool) {

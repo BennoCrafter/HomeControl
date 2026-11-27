@@ -15,12 +15,15 @@ struct DeviceTile: View {
     @State private var editingGroup = false
     @Environment(\.tileOpacity) private var tileOpacity
     @Environment(\.itemPrefs) private var prefs
+    /// A one-cell dashboard card: just the icon.
+    @State private var isCompact = false
 
     var body: some View {
         let binding = store.binding(for: device)
         let current = binding.wrappedValue
         // Split tile: the round icon toggles, the rest of the tile opens the details.
         HStack(spacing: 12) {
+            if isCompact { Spacer(minLength: 0) }
             Button {
                 if !current.kind.isControllable || store.group(for: device.id)?.iconOpens == true {
                     // A sensor has nothing to switch, and some groups are set to open: the icon opens it, like the rest of the tile.
@@ -45,31 +48,35 @@ struct DeviceTile: View {
             .buttonStyle(PressScale(scale: 0.82))
             .disabled(!current.isReachable)
             .accessibilityLabel(current.kind.isControllable ? "Toggle \(current.name)" : current.name)
-            VStack(alignment: .leading, spacing: 2) {
-                if showRoom {
-                    Text(current.room).font(.caption).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.5)
+            if !isCompact {
+                VStack(alignment: .leading, spacing: 2) {
+                    if showRoom {
+                        Text(current.room).font(.caption).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.5)
+                    }
+                    // Shrinks to fit rather than cutting the name off.
+                    Text(current.name)
+                        .font(.headline)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.4)
+                        .allowsTightening(true)
+                    Text(current.status)
+                        .font(.subheadline)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.5)
+                        .foregroundStyle(current.isReachable ? AnyShapeStyle(.secondary) : AnyShapeStyle(.orange))
+                        .contentTransition(.numericText())
                 }
-                // Shrinks to fit rather than cutting the name off.
-                Text(current.name)
-                    .font(.headline)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.4)
-                    .allowsTightening(true)
-                Text(current.status)
-                    .font(.subheadline)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.5)
-                    .foregroundStyle(current.isReachable ? AnyShapeStyle(.secondary) : AnyShapeStyle(.orange))
-                    .contentTransition(.numericText())
             }
             Spacer(minLength: 0)
             // No chevron: the room goes to the name. Only a problem gets a sign.
-            if !current.isReachable {
+            if !current.isReachable, !isCompact {
                 Image(systemName: "exclamationmark.triangle.fill").font(.caption.bold()).foregroundStyle(.orange)
             }
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, minHeight: 84, alignment: .leading)
+        .padding(isCompact ? 8 : 14)
+        // Fills a dashboard card of any size; the rooms' grid makes it at least a tile high.
+        .frame(maxWidth: .infinity, minHeight: isCompact ? nil : 84, maxHeight: .infinity, alignment: .leading)
+        .onGeometryChange(for: Bool.self) { $0.size.width < 130 } action: { isCompact = $0 }
         .background {
             RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(current.isActive ? AnyShapeStyle(current.kind.tint.opacity(0.22)) : AnyShapeStyle(Color(.secondarySystemGroupedBackground).opacity(tileOpacity)))

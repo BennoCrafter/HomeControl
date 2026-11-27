@@ -22,7 +22,7 @@ extension DashboardCard {
 extension DashboardCard.Kind {
     var minSize: (width: Int, height: Int) {
         switch self {
-        case .item, .group: (2, 1)
+        case .item, .group: (1, 1) // just the icon
         case .status: (2, 1)
         case .room, .camera, .collection, .folder: (2, 2)
         }

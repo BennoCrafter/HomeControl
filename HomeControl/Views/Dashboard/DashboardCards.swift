@@ -13,6 +13,7 @@ struct RoomCard: View {
     @Environment(HomeStore.self) private var store
     @Environment(\.itemPrefs) private var prefs
     @Environment(\.tileOpacity) private var tileOpacity
+    @AppStorage("cardIconsPerRow") private var iconsPerRow = 0
     @State private var toggles = 0
 
     private var devices: [Device] {
@@ -42,8 +43,10 @@ struct RoomCard: View {
             }
             .buttonStyle(PressScale(scale: 0.97))
             GeometryReader { geometry in
-                let size: CGFloat = large ? 54 : 42
-                let perRow = max(1, Int((geometry.size.width + 8) / (size + 8)))
+                // Automatic: a fixed icon size, as many as fit; otherwise that many, sized to the width.
+                let size: CGFloat = iconsPerRow == 0 ? (large ? 54 : 42)
+                    : max(24, (geometry.size.width - 8 * CGFloat(iconsPerRow - 1)) / CGFloat(iconsPerRow))
+                let perRow = iconsPerRow == 0 ? max(1, Int((geometry.size.width + 8) / (size + 8))) : iconsPerRow
                 let rows = max(1, Int((geometry.size.height + 8) / (size + (large ? 24 : 8))))
                 LazyVGrid(columns: Array(repeating: GridItem(.fixed(size), spacing: 8), count: perRow), alignment: .leading, spacing: 8) {
                     ForEach(devices.prefix(perRow * rows)) { device in

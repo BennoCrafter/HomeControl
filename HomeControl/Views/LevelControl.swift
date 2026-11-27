@@ -4,7 +4,7 @@ enum ControlStyle: String, CaseIterable, Identifiable {
     case pill, dial
 
     var id: Self { self }
-    var title: String { self == .pill ? "Pill" : "Dial" }
+    var title: String { self == .pill ? String(localized: "Pill") : String(localized: "Dial") }
 }
 
 /// Big touch control for a 0...1 level (light brightness or shutter opening), drawn as a pill or a dial.
@@ -15,29 +15,39 @@ struct LevelControl: View {
     @Binding var level: Double
     let look: Look
     let tint: Color
-    let icon: String
+    /// Gets the drag's values instead of `level`, which is set once on release; nil sets `level` throttled.
+    var live: ((Double) -> Void)?
     let onTap: () -> Void
 
     @AppStorage("controlStyle.light") private var lightStyle: ControlStyle = .dial
     @AppStorage("controlStyle.shutter") private var shutterStyle: ControlStyle = .pill
     @State private var draft: Double?
-    @State private var dragStart: Double?
     @State private var lastSent = Date.distantPast
-    @State private var lastAngle: Double?
     @State private var jumps = 0
     /// The level as drawn. Animated locally so taps spring immediately, independent of HomeKit round-trips.
     @State private var displayed: Double?
     @State private var lastLocalChange = Date.distantPast
     @State private var springTask: Task<Void, Never>?
+    @State private var dialAreaWidth: CGFloat = 0
+    /// The level when a dial drag began off the ring; such drags move it linearly, sideways.
+    @State private var linearBase: Double?
+    /// Decided by a dial drag's first movement: along the ring, or a sideways slide.
+    @State private var dialFollowsRing: Bool?
 
     private static let spring = Spring(duration: 0.55, bounce: 0.35)
+    /// Drags may start this far outside the control, and anywhere across the row, so the finger needn't hit it.
+    private static let dragSlop: CGFloat = 40
 
     private var shown: Double { draft ?? displayed ?? level }
 
+    /// What the label reads: the target, never the spring's in-between or overshoot values.
+    private var labelValue: Double { draft ?? level }
+
     private var label: String {
+        let value = labelValue
         switch look {
-        case .light: shown == 0 ? "Off" : shown.formatted(.percent.precision(.fractionLength(0)))
-        case .shutter: shown == 0 ? "Closed" : "\(shown.formatted(.percent.precision(.fractionLength(0)))) open"
+        case .light: return value == 0 ? String(localized: "Off") : value.formatted(.percent.precision(.fractionLength(0)))
+        case .shutter: return value == 0 ? String(localized: "Closed") : String(localized: "\(value.formatted(.percent.precision(.fractionLength(0)))) open")
         }
     }
 
@@ -53,7 +63,7 @@ struct LevelControl: View {
             guard draft == nil, Date.now.timeIntervalSince(lastLocalChange) > 1.2 else { return }
             animate(to: new)
         }
-        .sensoryFeedback(.impact(weight: .light), trigger: jumps)
+        .sensoryFeedback(.impact(weight: .medium), trigger: jumps)
         .sensoryFeedback(trigger: draft.map { Int(($0 * 10).rounded()) }) { _, step in
             guard let step else { return nil }
             return step == 0 || step == 10 ? .impact(weight: .heavy) : .selection
@@ -68,7 +78,7 @@ struct LevelControl: View {
             @unknown default: break
             }
         }
-        .accessibilityAction { onTap() }
+        .accessibilityAction { toggle() }
     }
 
     private func drag(to value: Double) {
@@ -76,11 +86,18 @@ struct LevelControl: View {
         springTask?.cancel()
         draft = value
         lastLocalChange = .now
-        // shortcut: fixed 0.1 s throttle, slow accessories may lag behind; the final value is always sent on release
-        if Date.now.timeIntervalSince(lastSent) > 0.1 {
+        // 0.05 s only limits redraws: the store keeps one HomeKit write in flight and skips stale values; release sends the last
+        if Date.now.timeIntervalSince(lastSent) > 0.05 {
             lastSent = .now
-            level = value
+            if let live { live(value) } else { level = value }
         }
+    }
+
+    /// On/off tap: animate here, since `onChange` drops level changes right after a drag as echoes.
+    private func toggle() {
+        onTap()
+        lastLocalChange = .now
+        animate(to: level)
     }
 
     /// Tap on a spot: springs straight to that level.
@@ -109,28 +126,16 @@ struct LevelControl: View {
     }
 
     private func endDrag() {
-        springTask?.cancel()
+        // A dial touch that never moved sets no draft; it must not freeze a running spring mid-bounce.
         if let draft {
+            springTask?.cancel()
             level = draft
             displayed = draft
             lastLocalChange = .now
         }
         draft = nil
-        dragStart = nil
-        lastAngle = nil
-    }
-
-    private var badge: some View {
-        VStack(spacing: 4) {
-            Image(systemName: icon).font(.title2)
-            Text(label)
-                .font(.headline)
-                .monospacedDigit()
-                .contentTransition(.numericText(value: shown))
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(.ultraThinMaterial, in: .rect(cornerRadius: 14))
+        linearBase = nil
+        dialFollowsRing = nil
     }
 
     // MARK: Pill
@@ -151,24 +156,22 @@ struct LevelControl: View {
                         .frame(height: max(0, height * (1 - shown)))
                         .frame(maxHeight: .infinity, alignment: .top)
                 }
-                Button(action: onTap) { badge }
-                    .buttonStyle(.plain)
-                    .frame(maxHeight: .infinity)
             }
             .clipShape(.rect(cornerRadius: 40))
             .contentShape(.rect(cornerRadius: 40))
             .gesture(SpatialTapGesture().onEnded { tap in jump(to: 1 - tap.location.y / height) })
-            .highPriorityGesture(
-                DragGesture(minimumDistance: 4)
-                    .onChanged { gesture in
-                        let start = dragStart ?? shown
-                        dragStart = start
-                        drag(to: start - gesture.translation.height / height)
-                    }
-                    .onEnded { _ in endDrag() }
-            )
         }
-        .frame(width: 130, height: 300)
+        .frame(width: 160, height: 300)
+        .padding(.vertical, Self.dragSlop)
+        .frame(maxWidth: .infinity)
+        .contentShape(.rect)
+        .highPriorityGesture(
+            DragGesture(minimumDistance: 4)
+                .onChanged { gesture in
+                    drag(to: 1 - (gesture.location.y - Self.dragSlop) / 300) // the fill edge follows the finger
+                }
+                .onEnded { _ in endDrag() }
+        )
     }
 
     // MARK: Dial
@@ -181,9 +184,14 @@ struct LevelControl: View {
             .rotation(.degrees(135))
     }
 
+    /// Level under a point relative to the dial centre; below 0 / above 1 inside the bottom gap.
+    private func dialValue(dx: CGFloat, dy: CGFloat) -> Double {
+        (atan2(dx, -dy) * 180 / .pi + 135) / 270
+    }
+
     private var dial: some View {
         let size: CGFloat = 260
-        let lineWidth: CGFloat = 30
+        let lineWidth: CGFloat = 44
         let radius = (size - lineWidth) / 2
         let angle = Angle.degrees(-135 + 270 * shown).radians // 0 = 12 o'clock, clockwise
         return ZStack {
@@ -193,10 +201,21 @@ struct LevelControl: View {
                 .fill(.white)
                 .shadow(radius: 3)
                 .frame(width: lineWidth - 4, height: lineWidth - 4)
+                // Knob grows while held and pops on a tap, before the offset so it scales in place.
+                .scaleEffect(draft != nil ? 1.25 : 1)
+                .animation(.spring(duration: 0.3, bounce: 0.5), value: draft != nil)
+                .keyframeAnimator(initialValue: 1.0, trigger: jumps) { $0.scaleEffect($1) } keyframes: { _ in
+                    SpringKeyframe(1.4, duration: 0.1)
+                    SpringKeyframe(1, duration: 0.45, spring: .bouncy)
+                }
                 .offset(y: -radius)
                 .rotationEffect(.radians(angle)) // rotating (not offsetting) keeps the knob on the arc while animating
-            Button(action: onTap) { badge }
-                .buttonStyle(.plain)
+            // No label in the middle: the header already says it. The centre still switches on and off.
+            Circle()
+                .fill(.clear)
+                .frame(width: radius * 0.8, height: radius * 0.8)
+                .contentShape(.circle)
+                .onTapGesture(perform: toggle)
         }
         .padding(lineWidth / 2)
         .frame(width: size, height: size)
@@ -204,24 +223,69 @@ struct LevelControl: View {
         .gesture(SpatialTapGesture().onEnded { tap in
             let dx = tap.location.x - size / 2, dy = tap.location.y - size / 2
             guard hypot(dx, dy) > radius * 0.4 else { return } // the centre is the toggle button
-            jump(to: (atan2(dx, -dy) * 180 / .pi + 135) / 270)
+            jump(to: dialValue(dx: dx, dy: dy))
         })
+        .padding(.vertical, Self.dragSlop)
+        .frame(maxWidth: .infinity)
+        .contentShape(.rect)
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { dialAreaWidth = $0 }
         .highPriorityGesture(
             DragGesture(minimumDistance: 4)
                 .onChanged { gesture in
-                    let dx = gesture.location.x - size / 2, dy = gesture.location.y - size / 2
-                    guard hypot(dx, dy) > radius * 0.4 else { return }
-                    // Relative turning: follow how far the finger rotates, wherever it starts, so the knob never jumps or gets stuck.
-                    let angle = atan2(dx, -dy) * 180 / .pi
-                    if let lastAngle {
-                        var delta = angle - lastAngle
-                        if delta > 180 { delta -= 360 } else if delta < -180 { delta += 360 }
-                        drag(to: shown + delta / 270)
+                    let startDistance = hypot(gesture.startLocation.x - dialAreaWidth / 2, gesture.startLocation.y - (Self.dragSlop + size / 2))
+                    // Off the ring (centre, sides), or a mostly sideways start on it: right is up, the dial's width spans 0...100%.
+                    if dialFollowsRing == nil {
+                        dialFollowsRing = abs(startDistance - radius) <= lineWidth && abs(gesture.translation.width) < abs(gesture.translation.height) * 1.5
                     }
-                    lastAngle = angle
+                    if dialFollowsRing == false {
+                        if linearBase == nil { linearBase = draft ?? level }
+                        drag(to: (linearBase ?? 0) + gesture.translation.width / size)
+                        return
+                    }
+                    let dx = gesture.location.x - dialAreaWidth / 2, dy = gesture.location.y - (Self.dragSlop + size / 2)
+                    guard hypot(dx, dy) > radius * 0.4 else { return }
+                    // The knob points where the finger is; crossing the bottom gap must not flip between 0 and 1.
+                    // Only inside the gap; elsewhere (e.g. sweeping across the centre) big jumps are intended.
+                    let raw = dialValue(dx: dx, dy: dy), value = min(max(raw, 0), 1)
+                    if raw != value, let draft, abs(value - draft) > 0.5 { return }
+                    drag(to: value)
                 }
                 .onEnded { _ in endDrag() }
         )
+    }
+}
+
+/// A small still of each style, for choosing it in Settings.
+struct ControlStylePreview: View {
+    let style: ControlStyle
+    let look: LevelControl.Look
+
+    private var tint: Color { look == .light ? .yellow : .indigo }
+
+    var body: some View {
+        switch style {
+        case .dial:
+            ZStack {
+                Circle().trim(from: 0, to: 0.75).rotation(.degrees(135))
+                    .stroke(.quaternary, style: StrokeStyle(lineWidth: 10, lineCap: .round))
+                Circle().trim(from: 0, to: 0.75 * 0.6).rotation(.degrees(135))
+                    .stroke(tint.gradient, style: StrokeStyle(lineWidth: 10, lineCap: .round))
+            }
+            .padding(5)
+            .aspectRatio(1, contentMode: .fit)
+        case .pill:
+            ZStack(alignment: .bottom) {
+                Rectangle().fill(.quaternary)
+                if look == .light {
+                    Rectangle().fill(tint.gradient).frame(height: 72 * 0.6)
+                } else {
+                    Rectangle().fill(tint.opacity(0.2))
+                    ShutterSlats().fill(tint.gradient).frame(height: 72 * 0.4).frame(maxHeight: .infinity, alignment: .top)
+                }
+            }
+            .frame(width: 38)
+            .clipShape(.rect(cornerRadius: 12, style: .continuous))
+        }
     }
 }
 

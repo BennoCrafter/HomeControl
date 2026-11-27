@@ -1,0 +1,2312 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@"
+          }
+        }
+      }
+    },
+    "%@ %@?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ %@?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@?"
+          }
+        }
+      }
+    },
+    "%@ can't be reached. Check its power and network." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ ist nicht erreichbar. Prüfe Strom und Netzwerk."
+          }
+        }
+      }
+    },
+    "%@ for %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ seit %@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ for %2$@"
+          }
+        }
+      }
+    },
+    "%@ for at least %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ seit mindestens %@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ for at least %2$@"
+          }
+        }
+      }
+    },
+    "%@ open" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ offen"
+          }
+        }
+      }
+    },
+    "%@ · %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · %@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "%@'s Dashboard" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard von %@"
+          }
+        }
+      }
+    },
+    "%@, %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, %@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@"
+          }
+        }
+      }
+    },
+    "%lld" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld"
+          }
+        }
+      }
+    },
+    "%lld items" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld Objekte"
+          }
+        }
+      }
+    },
+    "%lld items · %lld on" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld Objekte · %lld an"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld items · %2$lld on"
+          }
+        }
+      }
+    },
+    "%lld on" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld an"
+          }
+        }
+      }
+    },
+    "%lld open" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld offen"
+          }
+        }
+      }
+    },
+    "%lld unlocked" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld entriegelt"
+          }
+        }
+      }
+    },
+    "A collection is a dashboard card with items from any rooms." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eine Sammlung ist eine Dashboard-Karte mit Objekten aus beliebigen Räumen."
+          }
+        }
+      }
+    },
+    "A folder holds dashboard cards to tidy them away. It switches nothing itself; use a group for that." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein Ordner nimmt Dashboard-Karten auf, um aufzuräumen. Er schaltet selbst nichts; dafür gibt es Gruppen."
+          }
+        }
+      }
+    },
+    "A group's items switch together and show as one tile, in the rooms, widgets and Control Center." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Objekte einer Gruppe schalten zusammen und erscheinen als eine Kachel – in den Räumen, Widgets und im Kontrollzentrum."
+          }
+        }
+      }
+    },
+    "Access" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zugriff"
+          }
+        }
+      }
+    },
+    "Access granted" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zugriff erlaubt"
+          }
+        }
+      }
+    },
+    "Access was denied. You can turn it on in Settings." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Zugriff wurde abgelehnt. Du kannst ihn in den Einstellungen erlauben."
+          }
+        }
+      }
+    },
+    "Accessory" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zubehör"
+          }
+        }
+      }
+    },
+    "Add" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hinzufügen"
+          }
+        }
+      }
+    },
+    "Add Color" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Farbe hinzufügen"
+          }
+        }
+      }
+    },
+    "Add a folder, open it and add cards inside. It switches nothing itself." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Füge einen Ordner hinzu, öffne ihn und füge darin Karten hinzu. Er schaltet selbst nichts."
+          }
+        }
+      }
+    },
+    "Add rooms, items and a status card, then arrange them however you like." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Füge Räume, Objekte und eine Statuskarte hinzu und ordne sie, wie du willst."
+          }
+        }
+      }
+    },
+    "All Devices" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle Geräte"
+          }
+        }
+      }
+    },
+    "All closed" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alles zu"
+          }
+        }
+      }
+    },
+    "All off" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alles aus"
+          }
+        }
+      }
+    },
+    "Allow Home Access" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Home-Zugriff erlauben"
+          }
+        }
+      }
+    },
+    "Allow Home access in Settings to see your accessories." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erlaube den Home-Zugriff in den Einstellungen, um dein Zubehör zu sehen."
+          }
+        }
+      }
+    },
+    "Allowed" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erlaubt"
+          }
+        }
+      }
+    },
+    "Also renames it in Apple Home and for Siri." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Benennt es auch in Apple Home und für Siri um."
+          }
+        }
+      }
+    },
+    "Also renames it in Apple Home, for everyone in it." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Benennt es auch in Apple Home um, für alle darin."
+          }
+        }
+      }
+    },
+    "Angle" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Winkel"
+          }
+        }
+      }
+    },
+    "Appearance" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Darstellung"
+          }
+        }
+      }
+    },
+    "Apple homes" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple-Zuhause"
+          }
+        }
+      }
+    },
+    "Appliances" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geräte"
+          }
+        }
+      }
+    },
+    "Aurora" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Polarlicht"
+          }
+        }
+      }
+    },
+    "Automatic" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatisch"
+          }
+        }
+      }
+    },
+    "Background" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hintergrund"
+          }
+        }
+      }
+    },
+    "Blur" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unschärfe"
+          }
+        }
+      }
+    },
+    "Brightness" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Helligkeit"
+          }
+        }
+      }
+    },
+    "Camera" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kamera"
+          }
+        }
+      }
+    },
+    "Cancel" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abbrechen"
+          }
+        }
+      }
+    },
+    "Card Icons" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kartensymbole"
+          }
+        }
+      }
+    },
+    "Change Icon" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Symbol ändern"
+          }
+        }
+      }
+    },
+    "Climate" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klima"
+          }
+        }
+      }
+    },
+    "Close" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schließen"
+          }
+        }
+      }
+    },
+    "Closed" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geschlossen"
+          }
+        }
+      }
+    },
+    "Closing…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schließt …"
+          }
+        }
+      }
+    },
+    "Color %lld" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Farbe %lld"
+          }
+        }
+      }
+    },
+    "Colors" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Farben"
+          }
+        }
+      }
+    },
+    "Connect Apple Home" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Home verbinden"
+          }
+        }
+      }
+    },
+    "Continue" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weiter"
+          }
+        }
+      }
+    },
+    "Continue Anyway" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trotzdem fortfahren"
+          }
+        }
+      }
+    },
+    "Control Style" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Steuerungsstil"
+          }
+        }
+      }
+    },
+    "Copy From" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kopieren von"
+          }
+        }
+      }
+    },
+    "Couldn't Import" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import fehlgeschlagen"
+          }
+        }
+      }
+    },
+    "Couldn't Share" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Teilen fehlgeschlagen"
+          }
+        }
+      }
+    },
+    "Covers" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abdeckungen"
+          }
+        }
+      }
+    },
+    "Custom" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eigener"
+          }
+        }
+      }
+    },
+    "Dashboard" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard"
+          }
+        }
+      }
+    },
+    "Delete Collection" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sammlung löschen"
+          }
+        }
+      }
+    },
+    "Demo Home" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demo-Zuhause"
+          }
+        }
+      }
+    },
+    "Denied" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abgelehnt"
+          }
+        }
+      }
+    },
+    "Diagnostics" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diagnose"
+          }
+        }
+      }
+    },
+    "Dial" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drehregler"
+          }
+        }
+      }
+    },
+    "Dim" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abdunkeln"
+          }
+        }
+      }
+    },
+    "Done" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fertig"
+          }
+        }
+      }
+    },
+    "Doors & Windows" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Türen & Fenster"
+          }
+        }
+      }
+    },
+    "Edit" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bearbeiten"
+          }
+        }
+      }
+    },
+    "Edit Collection…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sammlung bearbeiten …"
+          }
+        }
+      }
+    },
+    "Edit Dashboard" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard bearbeiten"
+          }
+        }
+      }
+    },
+    "Edit Group…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gruppe bearbeiten …"
+          }
+        }
+      }
+    },
+    "Edit Photo" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foto bearbeiten"
+          }
+        }
+      }
+    },
+    "Explore the Demo Home" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demo-Zuhause ausprobieren"
+          }
+        }
+      }
+    },
+    "Feel your home" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spür dein Zuhause"
+          }
+        }
+      }
+    },
+    "Folder" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ordner"
+          }
+        }
+      }
+    },
+    "Forest" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wald"
+          }
+        }
+      }
+    },
+    "Garage door" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Garagentor"
+          }
+        }
+      }
+    },
+    "Get Started" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los geht's"
+          }
+        }
+      }
+    },
+    "Give HomeKit access" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HomeKit-Zugriff geben"
+          }
+        }
+      }
+    },
+    "Glow" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Glühen"
+          }
+        }
+      }
+    },
+    "Grain" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Körnung"
+          }
+        }
+      }
+    },
+    "Group" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gruppe"
+          }
+        }
+      }
+    },
+    "Group %lld Items" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld Objekte gruppieren"
+          }
+        }
+      }
+    },
+    "Group With…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gruppieren mit …"
+          }
+        }
+      }
+    },
+    "Group lamps that belong together" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gruppiere Lampen, die zusammengehören"
+          }
+        }
+      }
+    },
+    "Groups" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gruppen"
+          }
+        }
+      }
+    },
+    "Groups, dashboards, icons and backgrounds stay in sync for everyone through iCloud. Each person keeps their own dashboard." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gruppen, Dashboards, Symbole und Hintergründe bleiben für alle über iCloud synchron. Jede Person behält ihr eigenes Dashboard."
+          }
+        }
+      }
+    },
+    "Heating" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Heizen"
+          }
+        }
+      }
+    },
+    "Hide" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ausblenden"
+          }
+        }
+      }
+    },
+    "History" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verlauf"
+          }
+        }
+      }
+    },
+    "Hold a card and move it." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Halte eine Karte und verschieb sie."
+          }
+        }
+      }
+    },
+    "Hold the room's name and pick the items: they switch as one tile." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Halte den Namen des Raums und wähle die Objekte: Sie schalten als eine Kachel."
+          }
+        }
+      }
+    },
+    "Home" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zuhause"
+          }
+        }
+      }
+    },
+    "Home Access" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Home-Zugriff"
+          }
+        }
+      }
+    },
+    "Home ID" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zuhause-ID"
+          }
+        }
+      }
+    },
+    "Home access denied. Enable it in Settings › Privacy › HomeKit." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Home-Zugriff abgelehnt. Erlaube ihn unter Einstellungen › Datenschutz › HomeKit."
+          }
+        }
+      }
+    },
+    "HomeControl Sharing" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HomeControl-Freigabe"
+          }
+        }
+      }
+    },
+    "HomeControl reads and controls your accessories through Apple Home." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HomeControl liest und steuert dein Zubehör über Apple Home."
+          }
+        }
+      }
+    },
+    "HomeKit ID" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HomeKit-ID"
+          }
+        }
+      }
+    },
+    "How big the icons on room and group cards are, on the dashboard and in Rooms." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wie groß die Symbole auf Raum- und Gruppenkarten sind, im Dashboard und in Räume."
+          }
+        }
+      }
+    },
+    "How brightness and shutter position are adjusted in the device details." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wie Helligkeit und Rollladenposition in den Gerätedetails eingestellt werden."
+          }
+        }
+      }
+    },
+    "Icon Opens Group" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Symbol öffnet Gruppe"
+          }
+        }
+      }
+    },
+    "Icon Size" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Symbolgröße"
+          }
+        }
+      }
+    },
+    "Icon Tap" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tippen auf Symbol"
+          }
+        }
+      }
+    },
+    "Import Dashboard…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard importieren …"
+          }
+        }
+      }
+    },
+    "In %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In %@"
+          }
+        }
+      }
+    },
+    "In this home" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In diesem Zuhause"
+          }
+        }
+      }
+    },
+    "Invite family to %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Familie zu %@ einladen"
+          }
+        }
+      }
+    },
+    "Invite to Home…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zum Zuhause einladen …"
+          }
+        }
+      }
+    },
+    "Invite with iCloud" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mit iCloud einladen"
+          }
+        }
+      }
+    },
+    "Items" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Objekte"
+          }
+        }
+      }
+    },
+    "Jammed" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blockiert"
+          }
+        }
+      }
+    },
+    "Join %@ in HomeControl" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tritt %@ in HomeControl bei"
+          }
+        }
+      }
+    },
+    "L" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L"
+          }
+        }
+      }
+    },
+    "Lights" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Licht"
+          }
+        }
+      }
+    },
+    "Lights off" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Licht aus"
+          }
+        }
+      }
+    },
+    "Linear" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Linear"
+          }
+        }
+      }
+    },
+    "Live" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Live"
+          }
+        }
+      }
+    },
+    "Loading Home…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zuhause wird geladen …"
+          }
+        }
+      }
+    },
+    "Lock" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verriegeln"
+          }
+        }
+      }
+    },
+    "Lock All" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle verriegeln"
+          }
+        }
+      }
+    },
+    "Locked" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verriegelt"
+          }
+        }
+      }
+    },
+    "Locking…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verriegelt …"
+          }
+        }
+      }
+    },
+    "Locks" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schlösser"
+          }
+        }
+      }
+    },
+    "Look" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aussehen"
+          }
+        }
+      }
+    },
+    "M" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "M"
+          }
+        }
+      }
+    },
+    "Manage Sharing" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Freigabe verwalten"
+          }
+        }
+      }
+    },
+    "Manage Sharing…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Freigabe verwalten …"
+          }
+        }
+      }
+    },
+    "Me" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ich"
+          }
+        }
+      }
+    },
+    "Menu" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menü"
+          }
+        }
+      }
+    },
+    "Midnight" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mitternacht"
+          }
+        }
+      }
+    },
+    "Name" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name"
+          }
+        }
+      }
+    },
+    "New Collection…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neue Sammlung …"
+          }
+        }
+      }
+    },
+    "New Folder" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neuer Ordner"
+          }
+        }
+      }
+    },
+    "New Folder…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neuer Ordner …"
+          }
+        }
+      }
+    },
+    "No Response" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine Antwort"
+          }
+        }
+      }
+    },
+    "No home found. Set one up in the Home app or try the Demo Home." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kein Zuhause gefunden. Richte eines in der Home-App ein oder probiere das Demo-Zuhause."
+          }
+        }
+      }
+    },
+    "No supported accessories in %@." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kein unterstütztes Zubehör in %@."
+          }
+        }
+      }
+    },
+    "Not Now" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nicht jetzt"
+          }
+        }
+      }
+    },
+    "Not requested" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nicht angefragt"
+          }
+        }
+      }
+    },
+    "OK" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        }
+      }
+    },
+    "Obstructed" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Behindert"
+          }
+        }
+      }
+    },
+    "Ocean" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ozean"
+          }
+        }
+      }
+    },
+    "Off" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aus"
+          }
+        }
+      }
+    },
+    "Off · %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aus · %@"
+          }
+        }
+      }
+    },
+    "On" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An"
+          }
+        }
+      }
+    },
+    "On · %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An · %@"
+          }
+        }
+      }
+    },
+    "Opacity" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deckkraft"
+          }
+        }
+      }
+    },
+    "Open" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Offen"
+          }
+        }
+      }
+    },
+    "Open %@?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ öffnen?"
+          }
+        }
+      }
+    },
+    "Open Home Access" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Home-Zugriff öffnen"
+          }
+        }
+      }
+    },
+    "Open Privacy Settings" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datenschutz-Einstellungen öffnen"
+          }
+        }
+      }
+    },
+    "Open Settings" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einstellungen öffnen"
+          }
+        }
+      }
+    },
+    "Opening…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öffnet …"
+          }
+        }
+      }
+    },
+    "Orbs" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kugeln"
+          }
+        }
+      }
+    },
+    "Pattern" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Muster"
+          }
+        }
+      }
+    },
+    "People" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personen"
+          }
+        }
+      }
+    },
+    "Photo" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foto"
+          }
+        }
+      }
+    },
+    "Pick your own home in Settings to invite people." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wähle in den Einstellungen dein eigenes Zuhause, um Personen einzuladen."
+          }
+        }
+      }
+    },
+    "Pill" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schieberegler"
+          }
+        }
+      }
+    },
+    "Pin to Top" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oben anheften"
+          }
+        }
+      }
+    },
+    "Plain" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schlicht"
+          }
+        }
+      }
+    },
+    "Power" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strom"
+          }
+        }
+      }
+    },
+    "Remove" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entfernen"
+          }
+        }
+      }
+    },
+    "Rename" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Umbenennen"
+          }
+        }
+      }
+    },
+    "Rename Home" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zuhause umbenennen"
+          }
+        }
+      }
+    },
+    "Rename…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Umbenennen …"
+          }
+        }
+      }
+    },
+    "Request Home Access" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Home-Zugriff anfragen"
+          }
+        }
+      }
+    },
+    "Reset" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zurücksetzen"
+          }
+        }
+      }
+    },
+    "Reset the dashboard?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard zurücksetzen?"
+          }
+        }
+      }
+    },
+    "Room" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Raum"
+          }
+        }
+      }
+    },
+    "Rooms" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Räume"
+          }
+        }
+      }
+    },
+    "Rotate" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drehen"
+          }
+        }
+      }
+    },
+    "S" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "S"
+          }
+        }
+      }
+    },
+    "Save" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sichern"
+          }
+        }
+      }
+    },
+    "Search icons" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Symbole suchen"
+          }
+        }
+      }
+    },
+    "Security" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sicherheit"
+          }
+        }
+      }
+    },
+    "Settings" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einstellungen"
+          }
+        }
+      }
+    },
+    "Settings…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einstellungen …"
+          }
+        }
+      }
+    },
+    "Share this setup" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieses Setup teilen"
+          }
+        }
+      }
+    },
+    "Share this setup through iCloud and give HomeKit access, so everyone in %@ has their own dashboard." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Teile dieses Setup über iCloud und gib HomeKit-Zugriff, damit alle in %@ ihr eigenes Dashboard haben."
+          }
+        }
+      }
+    },
+    "Shared" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geteilt"
+          }
+        }
+      }
+    },
+    "Show" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einblenden"
+          }
+        }
+      }
+    },
+    "Show Onboarding" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einführung zeigen"
+          }
+        }
+      }
+    },
+    "Shows the Demo Home in Settings again." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zeigt das Demo-Zuhause wieder in den Einstellungen."
+          }
+        }
+      }
+    },
+    "Shuffle Colors" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Farben mischen"
+          }
+        }
+      }
+    },
+    "Shutter position" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rollladenposition"
+          }
+        }
+      }
+    },
+    "Shutters" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rollläden"
+          }
+        }
+      }
+    },
+    "Skip" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Überspringen"
+          }
+        }
+      }
+    },
+    "So they can switch the accessories too. Apple's Home screen for people opens." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Damit sie das Zubehör auch schalten können. Apples Home-Bildschirm für Personen öffnet sich."
+          }
+        }
+      }
+    },
+    "Softness" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weichheit"
+          }
+        }
+      }
+    },
+    "Someone" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jemand"
+          }
+        }
+      }
+    },
+    "Status" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Status"
+          }
+        }
+      }
+    },
+    "Stopped" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Angehalten"
+          }
+        }
+      }
+    },
+    "Sunset" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sonnenuntergang"
+          }
+        }
+      }
+    },
+    "Switches All" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schaltet alle"
+          }
+        }
+      }
+    },
+    "Tap Items to Group Them" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tippe Objekte an, um sie zu gruppieren"
+          }
+        }
+      }
+    },
+    "Tap to lock" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zum Verriegeln tippen"
+          }
+        }
+      }
+    },
+    "Tap to unlock" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zum Entriegeln tippen"
+          }
+        }
+      }
+    },
+    "Target %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ziel %@"
+          }
+        }
+      }
+    },
+    "The Demo Home lets you try every control without connecting to Apple Home." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Im Demo-Zuhause kannst du jede Steuerung ausprobieren, ohne Apple Home zu verbinden."
+          }
+        }
+      }
+    },
+    "The background of this home, and how solid the tiles are on top of it." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Hintergrund dieses Zuhauses und wie deckend die Kacheln darauf sind."
+          }
+        }
+      }
+    },
+    "The first color is the backdrop. Touch and hold a color to remove it." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die erste Farbe ist der Grund. Halte eine Farbe gedrückt, um sie zu entfernen."
+          }
+        }
+      }
+    },
+    "The lock is jammed. Check the door, then try again in the Home app." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das Schloss ist blockiert. Prüfe die Tür und versuche es dann in der Home-App erneut."
+          }
+        }
+      }
+    },
+    "Tidy up with folders" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Räum mit Ordnern auf"
+          }
+        }
+      }
+    },
+    "Turn Accessory On or Off" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zubehör ein- oder ausschalten"
+          }
+        }
+      }
+    },
+    "Turn All Off" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle ausschalten"
+          }
+        }
+      }
+    },
+    "Turn the dial." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dreh am Regler."
+          }
+        }
+      }
+    },
+    "Ungroup" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gruppierung aufheben"
+          }
+        }
+      }
+    },
+    "Unlock" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entriegeln"
+          }
+        }
+      }
+    },
+    "Unlock %@?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ entriegeln?"
+          }
+        }
+      }
+    },
+    "Unlocked" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entriegelt"
+          }
+        }
+      }
+    },
+    "Unlocking…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entriegelt …"
+          }
+        }
+      }
+    },
+    "Unpin" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lösen"
+          }
+        }
+      }
+    },
+    "Use" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verwenden"
+          }
+        }
+      }
+    },
+    "User" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Benutzer"
+          }
+        }
+      }
+    },
+    "Waiting…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warten …"
+          }
+        }
+      }
+    },
+    "What the round icon of the group's tile does. Tap the rest of the tile for every member's control." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Was das runde Symbol auf der Kachel der Gruppe tut. Tippe auf den Rest der Kachel für die Steuerung jedes Mitglieds."
+          }
+        }
+      }
+    },
+    "XL" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "XL"
+          }
+        }
+      }
+    },
+    "Your Dashboard" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Dashboard"
+          }
+        }
+      }
+    },
+    "Your dashboard" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Dashboard"
+          }
+        }
+      }
+    },
+    "before %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "vor %@"
+          }
+        }
+      }
+    },
+    "iCloud" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

@@ -6,6 +6,8 @@ struct ContentView: View {
     @Binding var showingSettings: Bool
     @State private var roomPath: [String] = []
     @AppStorage("hasOnboarded") private var hasOnboarded = false
+    @AppStorage("cardIconsPerRow") private var iconsPerRow = 0
+    @State private var roomsWidth: CGFloat = 0
     @FetchAll private var roomPrefs: [RoomPref]
     @FetchAll private var itemPrefs: [ItemPref]
     @FetchAll private var appearances: [Appearance]
@@ -135,7 +137,7 @@ struct ContentView: View {
                     ForEach(rooms, id: \.self) { room in
                         RoomCard(title: room, icon: roomIcons[room] ?? Self.icon(forRoom: room), items: visible(store.items(in: room)),
                                  large: true) { roomPath.append(room) } openItem: { linkedItem = $0 }
-                            .frame(height: 148)
+                            .frame(height: roomCardHeight)
                             .overlay(alignment: .topTrailing) {
                                 if isPinned(room) {
                                     Image(systemName: "pin.fill").font(.caption2).foregroundStyle(.orange).padding(10)
@@ -158,6 +160,7 @@ struct ContentView: View {
                     }
                 }
                 .padding()
+                .onGeometryChange(for: CGFloat.self) { $0.size.width - 32 } action: { roomsWidth = $0 }
             }
             .background(HomeBackground())
             .navigationTitle(store.homeName)
@@ -197,6 +200,16 @@ struct ContentView: View {
                 }
             }
         }
+    }
+
+    /// Tall enough for one row of icons at the size Settings asks for; the dashboard's cards are sized by hand instead.
+    private var roomCardHeight: CGFloat {
+        guard iconsPerRow > 0, roomsWidth > 0 else { return 148 }
+        let columns = max(1, Int((roomsWidth + 14) / (300 + 14))) // the grid's adaptive columns
+        let cardWidth = (roomsWidth - 14 * CGFloat(columns - 1)) / CGFloat(columns)
+        let icon = (cardWidth - 28 - 8 * CGFloat(iconsPerRow - 1)) / CGFloat(iconsPerRow)
+        // Padding, header and its spacing above, the name below each icon.
+        return max(148, 14 + 34 + 10 + icon + 24 + 14)
     }
 
     /// Best-effort SF Symbol for a room name (German and English keywords).

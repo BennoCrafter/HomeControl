@@ -89,7 +89,7 @@ struct RoomCard: View {
                     .background(device.isActive ? AnyShapeStyle(device.kind.tint.gradient) : AnyShapeStyle(.quaternary), in: .circle)
                     .shadow(color: device.isActive ? device.kind.tint.opacity(0.45) : .clear, radius: 6, y: 2)
                 if large {
-                    Text(device.name).font(.caption2).lineLimit(1).minimumScaleFactor(0.4)
+                    Text(device.name).font(.caption2).lineLimit(1) // one size for all, cut rather than shrunk unevenly
                         .frame(width: size + 6)
                 }
             }

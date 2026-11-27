@@ -1,6 +1,7 @@
 import CloudKit
 import SQLiteData
 import SwiftUI
+import TipKit
 
 @main
 struct HomeControlApp: App {
@@ -33,6 +34,11 @@ struct HomeControlApp: App {
             checkHistoryRuns()
         #endif
         setUpWidgetActions()
+        #if DEBUG
+            // Screenshots: `-showTips YES` shows every tip again.
+            if UserDefaults.standard.bool(forKey: "showTips") { Tips.showAllTipsForTesting() }
+        #endif
+        try? Tips.configure()
     }
 
     private func setUpWidgetActions() {

@@ -1,4 +1,5 @@
 import SwiftUI
+import TipKit
 
 struct RoomView: View {
     @Environment(HomeStore.self) private var store
@@ -19,6 +20,10 @@ struct RoomView: View {
 
     var body: some View {
         ScrollView {
+            if !isSelecting {
+                TipView(GroupTip())
+                    .padding([.horizontal, .top])
+            }
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), spacing: 12)], spacing: 12) {
                 ForEach(shown) { device in
                     DeviceTile(device: device, showRoom: showRoom) { selected = device }

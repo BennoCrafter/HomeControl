@@ -277,6 +277,16 @@
         }
       }
     },
+    "Add a folder, open it and add cards inside. It switches nothing itself." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Füge einen Ordner hinzu, öffne ihn und füge darin Karten hinzu. Er schaltet selbst nichts."
+          }
+        }
+      }
+    },
     "Add rooms, items and a status card, then arrange them however you like." : {
       "localizations" : {
         "de" : {
@@ -907,22 +917,22 @@
         }
       }
     },
+    "Group lamps that belong together" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gruppiere Lampen, die zusammengehören"
+          }
+        }
+      }
+    },
     "Groups" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Gruppen"
-          }
-        }
-      }
-    },
-    "Groups and folders" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gruppen und Ordner"
           }
         }
       }
@@ -967,12 +977,22 @@
         }
       }
     },
-    "Hold a card to move it, drag its corner to resize." : {
+    "Hold a card and move it." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Halte eine Karte, um sie zu verschieben, und zieh an ihrer Ecke, um die Größe zu ändern."
+            "value" : "Halte eine Karte und verschieb sie."
+          }
+        }
+      }
+    },
+    "Hold the room's name and pick the items: they switch as one tile." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Halte den Namen des Raums und wähle die Objekte: Sie schalten als eine Kachel."
           }
         }
       }
@@ -1193,16 +1213,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "L"
-          }
-        }
-      }
-    },
-    "Lamps that belong together switch as one tile." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lampen, die zusammengehören, schalten als eine Kachel."
           }
         }
       }
@@ -2107,12 +2117,12 @@
         }
       }
     },
-    "Tucks dashboard cards away, like on the Home Screen." : {
+    "Tidy up with folders" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Räumt Dashboard-Karten weg, wie auf dem Home-Bildschirm."
+            "value" : "Räum mit Ordnern auf"
           }
         }
       }
@@ -2143,16 +2153,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dreh am Regler."
-          }
-        }
-      }
-    },
-    "Two ways to keep it tidy." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zwei Wege, Ordnung zu halten."
           }
         }
       }

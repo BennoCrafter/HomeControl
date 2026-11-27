@@ -1,5 +1,6 @@
 import SQLiteData
 import SwiftUI
+import TipKit
 
 /// The home at a glance, arranged freely: cards on a grid, held to move, resized from the corner.
 /// 4 columns on a phone, 8 on wider screens; the same layout fits itself to both.
@@ -103,6 +104,11 @@ struct DashboardView: View {
                 let frames = preview(columns: columns, cards: cards)
                 let rows = (frames.values.map(\.maxY).max() ?? 0) + (isEditing ? 1 : 0)
                 ScrollView {
+                    // While arranging the dashboard itself: folders don't hold folders.
+                    if isEditing, folder == nil {
+                        TipView(FolderTip())
+                            .padding([.horizontal, .top], spacing)
+                    }
                     canvas(cards: cards, frames: frames, columns: columns, step: step, spacing: spacing)
                         .frame(width: geometry.size.width - spacing * 2,
                                height: max(0, CGFloat(rows) * step.height - spacing),
@@ -396,7 +402,9 @@ struct DashboardView: View {
             ToolbarItem(placement: .topBarLeading) {
                 Button("Reset", systemImage: "arrow.counterclockwise") { confirmingReset = true }
             }
-            ToolbarItem(placement: .topBarTrailing) { addMenu(columns: columns) }
+            ToolbarItem(placement: .topBarTrailing) {
+                addMenu(columns: columns)
+            }
         }
         ToolbarItem(placement: .topBarLeading) {
             if folder != nil {

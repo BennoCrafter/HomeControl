@@ -1,5 +1,6 @@
 import Foundation
 import SQLiteData
+import TipKit
 
 /// Writes groups, collections and folders, and tells the widgets about them.
 @MainActor
@@ -10,6 +11,11 @@ enum Groups {
         @Dependency(\.defaultDatabase) var database
         do {
             let id = try database.write { db in try DeviceGroup.upsert { group }.returning(\.id).fetchOne(db) }
+            switch group.kind {
+            case .group: GroupTip().invalidate(reason: .actionPerformed)
+            case .folder: FolderTip().invalidate(reason: .actionPerformed)
+            case .collection: break
+            }
             HomeStore.shared.saveSnapshot()
             return id
         } catch {

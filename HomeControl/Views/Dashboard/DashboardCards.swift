@@ -48,8 +48,10 @@ struct RoomCard: View {
                 LazyVGrid(columns: Array(repeating: GridItem(.fixed(size), spacing: 8), count: perRow), alignment: .leading, spacing: 8) {
                     ForEach(devices.prefix(perRow * rows)) { device in
                         toggle(device, size: size)
+                            .transition(.scale(scale: 0.6).combined(with: .opacity))
                     }
                 }
+                .animation(.snappy, value: devices.map(\.id))
             }
         }
         .padding(14)

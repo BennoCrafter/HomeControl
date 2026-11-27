@@ -12,15 +12,22 @@ struct RoomView: View {
     @State private var picked: [UUID] = []
     @State private var grouping = false
 
+    /// Hidden stays hidden, except while editing.
+    private var shown: [Device] {
+        isSelecting ? devices : devices.filter { !(prefs[$0.id]?.isHidden ?? false) }
+    }
+
     var body: some View {
         ScrollView {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), spacing: 12)], spacing: 12) {
-                // Hidden stays hidden, except while editing.
-                ForEach(isSelecting ? devices : devices.filter { !(prefs[$0.id]?.isHidden ?? false) }) { device in
+                ForEach(shown) { device in
                     DeviceTile(device: device, showRoom: showRoom) { selected = device }
                         .overlay { if isSelecting { selectionOverlay(device) } }
+                        .transition(.scale(scale: 0.6).combined(with: .opacity))
                 }
             }
+            // Prefs arrive from the database after the write, outside any withAnimation; animate on the result instead.
+            .animation(.snappy, value: shown.map(\.id))
             .padding()
         }
         .background(HomeBackground())

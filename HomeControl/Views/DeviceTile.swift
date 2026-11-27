@@ -22,8 +22,8 @@ struct DeviceTile: View {
         // Split tile: the round icon toggles, the rest of the tile opens the details.
         HStack(spacing: 12) {
             Button {
-                if !current.kind.isControllable {
-                    // A sensor has nothing to switch: its icon opens it, like the rest of the tile.
+                if !current.kind.isControllable || store.group(for: device.id)?.iconOpens == true {
+                    // A sensor has nothing to switch, and some groups are set to open: the icon opens it, like the rest of the tile.
                     opens += 1
                     openDetail()
                 } else if current.confirmationAction != nil {

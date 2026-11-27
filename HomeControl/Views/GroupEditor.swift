@@ -13,6 +13,7 @@ struct GroupEditor: View {
     @State private var icon: String?
     @State private var selected: [UUID]
     @State private var mainID: UUID?
+    @State private var iconOpens: Bool
     @State private var choosingIcon = false
     @State private var picks = 0
 
@@ -24,6 +25,7 @@ struct GroupEditor: View {
         _icon = State(initialValue: existing?.icon)
         _selected = State(initialValue: existing?.memberIDs ?? preselected)
         _mainID = State(initialValue: existing?.mainID)
+        _iconOpens = State(initialValue: existing?.iconOpens ?? false)
     }
 
     /// Cameras have nothing to switch; groups can't hold groups.
@@ -65,12 +67,15 @@ struct GroupEditor: View {
                             .font(.title3.weight(.semibold))
                     }
                 }
-                if kind == .group, members.count > 1 {
+                if kind == .group {
                     Section {
-                        Picker("Icon Tap", selection: $mainID) {
-                            Text("Switches All").tag(UUID?.none)
-                            ForEach(members) { member in
-                                Label(member.name, systemImage: member.icon).tag(UUID?.some(member.id))
+                        Toggle("Icon Opens Group", isOn: $iconOpens.animation(.snappy))
+                        if !iconOpens, members.count > 1 {
+                            Picker("Icon Tap", selection: $mainID) {
+                                Text("Switches All").tag(UUID?.none)
+                                ForEach(members) { member in
+                                    Label(member.name, systemImage: member.icon).tag(UUID?.some(member.id))
+                                }
                             }
                         }
                     } footer: {
@@ -148,7 +153,7 @@ struct GroupEditor: View {
 
     private func save() {
         var group = DeviceGroup.Draft(id: existing?.id, homeID: store.currentHomeID ?? "", kind: kind,
-                                      name: name.trimmingCharacters(in: .whitespaces), icon: icon, mainID: mainID)
+                                      name: name.trimmingCharacters(in: .whitespaces), icon: icon, mainID: mainID, iconOpens: iconOpens)
         if group.name.isEmpty { group.name = suggestedName }
         group.members = selected.map(\.uuidString).joined(separator: ",")
         if let id = Groups.save(group) { saved(id) }

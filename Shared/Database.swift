@@ -80,6 +80,8 @@ struct DeviceGroup: Identifiable, Hashable, Sendable {
     var members = ""
     /// The member the tile's icon switches; nil switches all of them.
     var mainID: UUID?
+    /// The tile's icon opens the group instead of switching anything.
+    var iconOpens = false
 
     var memberIDs: [UUID] {
         get { members.split(separator: ",").compactMap { UUID(uuidString: String($0)) } }
@@ -263,6 +265,9 @@ enum Schema {
                 ) STRICT
                 """
             ).execute(db)
+        }
+        migrator.registerMigration("Add group icon opens") { db in
+            try #sql(#"ALTER TABLE "groups" ADD COLUMN "iconOpens" INTEGER NOT NULL DEFAULT 0"#).execute(db)
         }
         return migrator
     }

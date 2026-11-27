@@ -427,10 +427,6 @@
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-<<<<<<< HEAD
->>>>>>> Stashed changes
-=======
->>>>>>> 181737a7d57c51993403b02eaa746063a69407f3
 			};
 			name = Release;
 		};

@@ -492,9 +492,12 @@ struct DashboardView: View {
             }
             ForEach(store.rooms, id: \.self) { room in
                 Menu(room) {
-                    ForEach(store.devices.filter { $0.room == room && $0.kind != .camera }) { device in
-                        Button(device.name, systemImage: device.icon) { add(.item, ref: device.id.uuidString, columns: columns) }
-                            .disabled(shown.contains(device.id.uuidString))
+                    // Cameras with the rest of their room, as a camera card.
+                    ForEach(store.devices.filter { $0.room == room }) { device in
+                        Button(device.name, systemImage: device.icon) {
+                            add(device.kind == .camera ? .camera : .item, ref: device.id.uuidString, columns: columns)
+                        }
+                        .disabled(shown.contains(device.id.uuidString))
                     }
                 }
             }
@@ -504,15 +507,6 @@ struct DashboardView: View {
                     ForEach(groups) { group in
                         Button(group.name) { add(.group, ref: group.id.uuidString, columns: columns) }
                             .disabled(cards.contains { $0.kind == .group && $0.ref == group.id.uuidString })
-                    }
-                }
-            }
-            let cameras = store.devices.filter { $0.kind == .camera }
-            if !cameras.isEmpty {
-                Menu("Camera", systemImage: "web.camera") {
-                    ForEach(cameras) { camera in
-                        Button(camera.name) { add(.camera, ref: camera.id.uuidString, columns: columns) }
-                            .disabled(shown.contains(camera.id.uuidString))
                     }
                 }
             }

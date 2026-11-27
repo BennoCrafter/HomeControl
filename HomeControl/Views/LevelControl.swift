@@ -15,7 +15,6 @@ struct LevelControl: View {
     @Binding var level: Double
     let look: Look
     let tint: Color
-    let icon: String
     let onTap: () -> Void
 
     @AppStorage("controlStyle.light") private var lightStyle: ControlStyle = .dial
@@ -134,19 +133,6 @@ struct LevelControl: View {
         linearBase = nil
     }
 
-    private var badge: some View {
-        VStack(spacing: 4) {
-            Image(systemName: icon).font(.title2)
-            Text(label)
-                .font(.headline)
-                .monospacedDigit()
-                .contentTransition(.numericText(value: labelValue))
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(.ultraThinMaterial, in: .rect(cornerRadius: 14))
-    }
-
     // MARK: Pill
 
     private var pill: some View {
@@ -165,9 +151,6 @@ struct LevelControl: View {
                         .frame(height: max(0, height * (1 - shown)))
                         .frame(maxHeight: .infinity, alignment: .top)
                 }
-                Button(action: toggle) { badge }
-                    .buttonStyle(.plain)
-                    .frame(maxHeight: .infinity)
             }
             .clipShape(.rect(cornerRadius: 40))
             .contentShape(.rect(cornerRadius: 40))
@@ -222,8 +205,12 @@ struct LevelControl: View {
                 }
                 .offset(y: -radius)
                 .rotationEffect(.radians(angle)) // rotating (not offsetting) keeps the knob on the arc while animating
-            Button(action: toggle) { badge }
-                .buttonStyle(.plain)
+            // No label in the middle: the header already says it. The centre still switches on and off.
+            Circle()
+                .fill(.clear)
+                .frame(width: radius * 0.8, height: radius * 0.8)
+                .contentShape(.circle)
+                .onTapGesture(perform: toggle)
         }
         .padding(lineWidth / 2)
         .frame(width: size, height: size)

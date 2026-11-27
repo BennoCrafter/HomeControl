@@ -317,16 +317,6 @@
         }
       }
     },
-    "Always in sync" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Immer synchron"
-          }
-        }
-      }
-    },
     "Angle" : {
       "localizations" : {
         "de" : {
@@ -363,6 +353,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Polarlicht"
+          }
+        }
+      }
+    },
+    "Auto" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto"
           }
         }
       }
@@ -427,22 +427,22 @@
         }
       }
     },
+    "Cards" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Karten"
+          }
+        }
+      }
+    },
     "Change Icon" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Symbol ändern"
-          }
-        }
-      }
-    },
-    "Changes from the Home app and your devices appear instantly." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Änderungen aus der Home-App und von deinen Geräten erscheinen sofort."
           }
         }
       }
@@ -507,12 +507,12 @@
         }
       }
     },
-    "Connect to Apple Home" : {
+    "Connect Apple Home" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mit Apple Home verbinden"
+            "value" : "Apple Home verbinden"
           }
         }
       }
@@ -717,22 +717,32 @@
         }
       }
     },
-    "Every control is built to feel right under your finger." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Jede Steuerung fühlt sich unter deinem Finger richtig an."
-          }
-        }
-      }
-    },
     "Explore the Demo Home" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Demo-Zuhause ausprobieren"
+          }
+        }
+      }
+    },
+    "Feel your home" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spür dein Zuhause"
+          }
+        }
+      }
+    },
+    "Fewer icons per row make them bigger, on room and group cards." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weniger Symbole pro Reihe machen sie größer, auf Raum- und Gruppenkarten."
           }
         }
       }
@@ -917,16 +927,6 @@
         }
       }
     },
-    "HomeControl needs access to your Home data to show and control your accessories. It stays between your devices and Apple Home." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "HomeControl braucht Zugriff auf deine Home-Daten, um dein Zubehör anzuzeigen und zu steuern. Sie bleiben zwischen deinen Geräten und Apple Home."
-          }
-        }
-      }
-    },
     "HomeControl reads and controls your accessories through Apple Home." : {
       "localizations" : {
         "de" : {
@@ -937,12 +937,12 @@
         }
       }
     },
-    "How brightness and shutter position are adjusted in the device details, and how big the icons on room and group cards are: fewer per row are bigger." : {
+    "How brightness and shutter position are adjusted in the device details." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wie Helligkeit und Rollladenposition in den Gerätedetails eingestellt werden und wie groß die Symbole auf Raum- und Gruppenkarten sind: Weniger pro Reihe sind größer."
+            "value" : "Wie Helligkeit und Rollladenposition in den Gerätedetails eingestellt werden."
           }
         }
       }
@@ -967,12 +967,12 @@
         }
       }
     },
-    "Icons per Row on Cards" : {
+    "Icons per Row" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Symbole pro Reihe auf Karten"
+            "value" : "Symbole pro Reihe"
           }
         }
       }
@@ -1167,32 +1167,12 @@
         }
       }
     },
-    "Locks & garage doors" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Schlösser & Garagentore"
-          }
-        }
-      }
-    },
     "Look" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aussehen"
-          }
-        }
-      }
-    },
-    "Made for touch" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Für Berührung gemacht"
           }
         }
       }
@@ -1453,16 +1433,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Einstellungen öffnen"
-          }
-        }
-      }
-    },
-    "Opening and unlocking always asks first." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Öffnen und Entriegeln fragt immer zuerst nach."
           }
         }
       }
@@ -1777,26 +1747,6 @@
         }
       }
     },
-    "Skip" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Überspringen"
-          }
-        }
-      }
-    },
-    "Slide to open or close, with a haptic tick every 10%." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Schiebe zum Öffnen oder Schließen, mit einem spürbaren Tick alle 10 %."
-          }
-        }
-      }
-    },
     "So they can switch the accessories too. Apple's Home screen for people opens." : {
       "localizations" : {
         "de" : {
@@ -1967,12 +1917,12 @@
         }
       }
     },
-    "Turn the dial and watch the brightness follow live." : {
+    "Turn the dial." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dreh am Regler und sieh zu, wie die Helligkeit live folgt."
+            "value" : "Dreh am Regler."
           }
         }
       }
@@ -2057,16 +2007,6 @@
         }
       }
     },
-    "Welcome to HomeControl" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Willkommen bei HomeControl"
-          }
-        }
-      }
-    },
     "What the round icon of the group's tile does. Tap the rest of the tile for every member's control." : {
       "localizations" : {
         "de" : {
@@ -2077,22 +2017,22 @@
         }
       }
     },
-    "Your Apple Home on iPhone, iPad and Mac. Fast, clear and always within reach." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dein Apple Home auf iPhone, iPad und Mac. Schnell, klar und immer griffbereit."
-          }
-        }
-      }
-    },
     "Your Dashboard" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dein Dashboard"
+          }
+        }
+      }
+    },
+    "Your rooms and accessories, on a dashboard you arrange yourself." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Räume und dein Zubehör, auf einem Dashboard, das du selbst anordnest."
           }
         }
       }

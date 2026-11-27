@@ -144,7 +144,7 @@ struct DeviceControls: View {
     var body: some View {
         switch device.kind {
         case .light where device.hasValue:
-            LevelControl(level: brightness, look: .light, tint: device.kind.tint, icon: device.icon) {
+            LevelControl(level: brightness, look: .light, tint: device.kind.tint) {
                 device.isOn.toggle()
             }
             .frame(maxWidth: .infinity)
@@ -172,7 +172,7 @@ struct DeviceControls: View {
         case .contact, .camera:
             EmptyView()
         case .blinds:
-            LevelControl(level: $device.value, look: .shutter, tint: device.kind.tint, icon: device.icon) {
+            LevelControl(level: $device.value, look: .shutter, tint: device.kind.tint) {
                 device.value = device.value > 0 ? 0 : 1
             }
             .frame(maxWidth: .infinity)

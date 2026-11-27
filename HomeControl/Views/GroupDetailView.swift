@@ -149,6 +149,10 @@ struct MemberRow: View {
     @Environment(\.itemPrefs) private var prefs
     @State private var confirming = false
     @State private var toggles = 0
+    /// The slider's own value while dragging and briefly after: HomeKit's late echoes would yank the thumb back.
+    @State private var draft: Double?
+    @State private var lastSent = Date.distantPast
+    @State private var release: Task<Void, Never>?
 
     var body: some View {
         let binding = store.binding(for: device)
@@ -181,8 +185,24 @@ struct MemberRow: View {
                 }
             }
             if current.isReachable, current.hasValue, current.kind == .light || current.kind == .blinds {
-                Slider(value: level(binding), in: 0 ... 1)
-                    .tint(current.kind.tint)
+                let level = level(binding)
+                Slider(value: Binding(get: { draft ?? level.wrappedValue }, set: { value in
+                    release?.cancel()
+                    draft = value
+                    // shortcut: fixed 0.1 s throttle like LevelControl; the final value is always sent on release
+                    if Date.now.timeIntervalSince(lastSent) > 0.1 {
+                        lastSent = .now
+                        level.wrappedValue = value
+                    }
+                }), in: 0 ... 1) { editing in
+                    guard !editing, let draft else { return }
+                    level.wrappedValue = draft
+                    release = Task {
+                        try? await Task.sleep(for: .seconds(1.2))
+                        if !Task.isCancelled { self.draft = nil }
+                    }
+                }
+                .tint(current.kind.tint)
             }
         }
         .animation(.spring(duration: 0.3, bounce: 0.35), value: current.isActive)

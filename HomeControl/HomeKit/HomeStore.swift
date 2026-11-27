@@ -24,7 +24,12 @@ final class HomeStore: NSObject {
     private(set) var devices: [Device] = [] {
         didSet {
             recordChanges()
-            saveSnapshot()
+            // Debounced: a slider changes this ten times a second, and each snapshot reloads every widget.
+            snapshotTask?.cancel()
+            snapshotTask = Task {
+                try? await Task.sleep(for: .milliseconds(600))
+                if !Task.isCancelled { saveSnapshot() }
+            }
         }
     }
     /// Each item's latest saved state change, read from the history once per home: HomeKit keeps none.
@@ -53,6 +58,11 @@ final class HomeStore: NSObject {
     /// When this app last asked an item to change; until then a differing current state is it still moving.
     @ObservationIgnored private var lastWrite: [UUID: Date] = [:]
     @ObservationIgnored private var pendingWidgetTaps = 0
+    @ObservationIgnored private var snapshotTask: Task<Void, Never>?
+    /// One HomeKit write per item at a time: queued writes made a dragged light trail far behind the finger.
+    @ObservationIgnored private var writing: [UUID: Task<Void, any Error>] = [:]
+    /// What each item was last asked to become; a running write sends this next, not HomeKit's possibly older echo.
+    @ObservationIgnored private var writeTargets: [UUID: Device] = [:]
     /// This device's HomeKit ids to the shared ids items are known by.
     @ObservationIgnored private var sharedIDs: [UUID: UUID] = [:]
     private(set) var cameras: [UUID: HMCameraProfile] = [:]
@@ -389,18 +399,31 @@ final class HomeStore: NSObject {
             return []
         }
         guard let service = services[new.id] else { return [] }
-        let writes = new.writes(from: devices[i], on: service)
+        let id = new.id
+        var sent = devices[i]
         devices[i] = new
-        lastWrite[new.id] = .now
-        return [Task {
-            defer { refresh(service) }
-            do {
-                for (characteristic, value) in writes { try await characteristic.writeValue(value) }
-            } catch {
-                message = "\(new.name): \(error.localizedDescription)"
-                throw error
+        lastWrite[id] = .now
+        writeTargets[id] = new
+        if let running = writing[id] { return [running] }
+        let task = Task {
+            defer {
+                writing[id] = nil
+                writeTargets[id] = nil
+                refresh(service)
             }
-        }]
+            // Sends whatever is newest each round; the in-between values of a drag are skipped, not queued.
+            while let target = writeTargets[id], target != sent {
+                do {
+                    for (characteristic, value) in target.writes(from: sent, on: service) { try await characteristic.writeValue(value) }
+                } catch {
+                    message = "\(target.name): \(error.localizedDescription)"
+                    throw error
+                }
+                sent = target
+            }
+        }
+        writing[id] = task
+        return [task]
     }
 
     /// Demo accessories react like real ones: the garage door takes a moment to move.

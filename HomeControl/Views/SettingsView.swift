@@ -9,24 +9,35 @@ struct SettingsView: View {
     @Environment(\.openURL) private var openURL
     @AppStorage("cardIconsPerRow") private var iconsPerRow = 0
     @State private var inviting = false
+    @State private var renamingHome: HomeOption?
+    @State private var newHomeName = ""
+    @State private var showingDiagnostics = false
 
     var body: some View {
         NavigationStack {
             Form {
                 Section {
-                    Picker("Home", selection: Binding(get: { store.homeKitID },
-                                                      set: { if let id = $0 { store.selectHome(id) } })) {
-                        ForEach(store.homes) { home in
-                            Label(home.name, systemImage: home == .demo ? "sparkles" : "house")
-                                .tag(Optional(home.id))
+                    ForEach(store.homes) { home in
+                        Button { store.selectHome(home.id) } label: {
+                            HStack {
+                                Label(home.name, systemImage: home == .demo ? "sparkles" : "house")
+                                Spacer()
+                                if home.id == store.homeKitID {
+                                    Image(systemName: "checkmark").foregroundStyle(.tint).fontWeight(.semibold)
+                                }
+                            }
+                            .contentShape(.rect)
                         }
+                        .foregroundStyle(.primary)
+                        .swipeActions { homeActions(home) }
+                        .contextMenu { homeActions(home) }
                     }
-                    .pickerStyle(.inline)
-                    .labelsHidden()
                 } header: {
                     Text("Home")
                 } footer: {
-                    Text("The Demo Home lets you try every control without connecting to Apple Home.")
+                    if store.showsDemoHome {
+                        Text("The Demo Home lets you try every control without connecting to Apple Home.")
+                    }
                 }
                 if let homeID = store.currentHomeID {
                     AppearanceSection(homeID: homeID)
@@ -102,13 +113,41 @@ struct SettingsView: View {
                             withAnimation(.smooth(duration: 0.45)) { hasOnboarded = false }
                         }
                     }
+                } footer: {
+                    Text(verbatim: "HomeControl \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "") (\(Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""))")
+                        .frame(maxWidth: .infinity)
+                        .onLongPressGesture { showingDiagnostics = true }
                 }
             }
             .formStyle(.grouped)
+            // Hidden on purpose: holding the version opens it.
+            .navigationDestination(isPresented: $showingDiagnostics) { DiagnosticsView() }
+            .alert("Rename Home", isPresented: Binding(get: { renamingHome != nil }, set: { if !$0 { renamingHome = nil } })) {
+                TextField("Name", text: $newHomeName)
+                Button("Rename") {
+                    let name = newHomeName.trimmingCharacters(in: .whitespaces)
+                    if let home = renamingHome, !name.isEmpty { store.renameHome(home.id, to: name) }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Also renames it in Apple Home, for everyone in it.")
+            }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func homeActions(_ home: HomeOption) -> some View {
+        if home == .demo {
+            Button("Remove", systemImage: "trash", role: .destructive) { withAnimation { store.removeDemoHome() } }
+        } else {
+            Button("Rename…", systemImage: "pencil") {
+                newHomeName = home.name
+                renamingHome = home
             }
         }
     }

@@ -187,6 +187,16 @@
         }
       }
     },
+    "Access" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zugriff"
+          }
+        }
+      }
+    },
     "Access granted" : {
       "localizations" : {
         "de" : {
@@ -317,6 +327,16 @@
         }
       }
     },
+    "Also renames it in Apple Home, for everyone in it." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Benennt es auch in Apple Home um, für alle darin."
+          }
+        }
+      }
+    },
     "Angle" : {
       "localizations" : {
         "de" : {
@@ -333,6 +353,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Darstellung"
+          }
+        }
+      }
+    },
+    "Apple homes" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple-Zuhause"
           }
         }
       }
@@ -617,12 +647,32 @@
         }
       }
     },
+    "Demo Home" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demo-Zuhause"
+          }
+        }
+      }
+    },
     "Denied" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Abgelehnt"
+          }
+        }
+      }
+    },
+    "Diagnostics" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diagnose"
           }
         }
       }
@@ -847,6 +897,16 @@
         }
       }
     },
+    "Groups" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gruppen"
+          }
+        }
+      }
+    },
     "Groups, dashboards, icons and backgrounds stay in sync for everyone through iCloud. Each person keeps their own dashboard." : {
       "localizations" : {
         "de" : {
@@ -907,6 +967,16 @@
         }
       }
     },
+    "Home ID" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zuhause-ID"
+          }
+        }
+      }
+    },
     "Home access denied. Enable it in Settings › Privacy › HomeKit." : {
       "localizations" : {
         "de" : {
@@ -933,6 +1003,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "HomeControl liest und steuert dein Zubehör über Apple Home."
+          }
+        }
+      }
+    },
+    "HomeKit ID" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HomeKit-ID"
           }
         }
       }
@@ -1287,6 +1367,16 @@
         }
       }
     },
+    "No supported accessories in %@." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kein unterstütztes Zubehör in %@."
+          }
+        }
+      }
+    },
     "Not Now" : {
       "localizations" : {
         "de" : {
@@ -1557,6 +1647,16 @@
         }
       }
     },
+    "Rename Home" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zuhause umbenennen"
+          }
+        }
+      }
+    },
     "Rename…" : {
       "localizations" : {
         "de" : {
@@ -1697,6 +1797,16 @@
         }
       }
     },
+    "Shared" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geteilt"
+          }
+        }
+      }
+    },
     "Show" : {
       "localizations" : {
         "de" : {
@@ -1713,6 +1823,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Einführung zeigen"
+          }
+        }
+      }
+    },
+    "Shows the Demo Home in Settings again." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zeigt das Demo-Zuhause wieder in den Einstellungen."
           }
         }
       }
@@ -1997,6 +2117,16 @@
         }
       }
     },
+    "User" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Benutzer"
+          }
+        }
+      }
+    },
     "Waiting…" : {
       "localizations" : {
         "de" : {
@@ -2043,6 +2173,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "vor %@"
+          }
+        }
+      }
+    },
+    "iCloud" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud"
           }
         }
       }

@@ -41,7 +41,13 @@ final class HomeStore: NSObject {
     @ObservationIgnored private var watchedUntil = UserDefaults.standard.object(forKey: "watchedUntil") as? Date
     private(set) var homeName = "Home"
     private(set) var access = HomeAccess.notRequested
-    private(set) var homes: [HomeOption] = [.demo]
+    /// This person's Apple homes.
+    private(set) var appleHomes: [HomeOption] = []
+    /// Removed in Settings; Diagnostics brings it back.
+    var showsDemoHome = UserDefaults.standard.object(forKey: "showsDemoHome") as? Bool ?? true {
+        didSet { UserDefaults.standard.set(showsDemoHome, forKey: "showsDemoHome") }
+    }
+    var homes: [HomeOption] { appleHomes + (showsDemoHome ? [.demo] : []) }
     /// The home's id in this app's data: HomeKit's own, or the shared one when a family member shared theirs.
     private(set) var currentHomeID: String? {
         didSet { if let currentHomeID { UserDefaults.standard.set(currentHomeID, forKey: Self.lastHomeKey) } }
@@ -100,8 +106,28 @@ final class HomeStore: NSObject {
     }
 
     func selectHome(_ id: String) {
+        if id == HomeOption.demo.id { showsDemoHome = true }
         UserDefaults.standard.set(id, forKey: Self.homeKey)
         reload()
+    }
+
+    /// Takes the Demo Home out of the lists, moving to a real home if it was showing.
+    func removeDemoHome() {
+        showsDemoHome = false
+        if isDemo { selectHome(appleHomes.first?.id ?? "") }
+    }
+
+    /// Renames it in Apple Home, so everyone in it and Siri see the new name.
+    func renameHome(_ id: String, to name: String) {
+        guard let home = manager?.homes.first(where: { $0.uniqueIdentifier.uuidString == id }) else { return }
+        Task {
+            do {
+                try await home.updateName(name)
+                reload()
+            } catch {
+                message = "\(home.name): \(error.localizedDescription)"
+            }
+        }
     }
 
     var rooms: [String] {
@@ -189,7 +215,7 @@ final class HomeStore: NSObject {
         if let manager {
             let status = manager.authorizationStatus
             access = status.contains(.authorized) ? .authorized : status.contains(.determined) ? .denied : .pending
-            homes = manager.homes.map { HomeOption(id: $0.uniqueIdentifier.uuidString, name: $0.name) } + [.demo]
+            appleHomes = manager.homes.map { HomeOption(id: $0.uniqueIdentifier.uuidString, name: $0.name) }
         }
         services = [:]
         cameras = [:]
@@ -252,7 +278,7 @@ final class HomeStore: NSObject {
         }
         saveItemDirectory()
         loadPeople()
-        message = result.isEmpty ? "No supported accessories in \(home.name)." : nil
+        message = result.isEmpty ? String(localized: "No supported accessories in \(home.name).") : nil
     }
 
     /// Reloads when a family member's shared home arrives, so its groups and dashboards line up with this device.

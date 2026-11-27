@@ -66,6 +66,10 @@ struct GroupEditor: View {
                         TextField(suggestedName, text: $name)
                             .font(.title3.weight(.semibold))
                     }
+                } footer: {
+                    // What it is, said where it's made.
+                    Text(kind == .group ? "A group's items switch together and show as one tile, in the rooms, widgets and Control Center."
+                                        : "A collection is a dashboard card with items from any rooms.")
                 }
                 if kind == .group {
                     Section {

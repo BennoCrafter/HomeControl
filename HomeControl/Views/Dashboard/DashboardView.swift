@@ -170,6 +170,8 @@ struct DashboardView: View {
                     }
                 }
                 Button("Cancel", role: .cancel) { newFolderName = "" }
+            } message: {
+                Text("A folder holds dashboard cards to tidy them away. It switches nothing itself; use a group for that.")
             }
             .confirmationDialog("Reset the dashboard?", isPresented: $confirmingReset, titleVisibility: .visible) {
                 Button("Reset", role: .destructive) { reset() }

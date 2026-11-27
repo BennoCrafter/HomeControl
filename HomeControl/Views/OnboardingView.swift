@@ -19,7 +19,7 @@ struct OnboardingView: View {
 
     @State private var demoLevel = 0.4
 
-    private let lastPage = 1
+    private let lastPage = 3
 
     var body: some View {
         VStack(spacing: 0) {
@@ -32,11 +32,27 @@ struct OnboardingView: View {
                 }
                 .tag(0)
 
-                OnboardingPage(symbol: "homekit", title: "Connect Apple Home",
-                               text: "Your rooms and accessories, on a dashboard you arrange yourself.") {
-                    accessStatus
+                OnboardingPage(symbol: nil, title: "Your dashboard",
+                               text: "Hold a card to move it, drag its corner to resize.") {
+                    DashboardSketch()
                 }
                 .tag(1)
+
+                OnboardingPage(symbol: nil, title: "Groups and folders", text: "Two ways to keep it tidy.") {
+                    VStack(spacing: 14) {
+                        ExplainerRow(symbol: "square.stack.3d.up.fill", title: "Group",
+                                     text: "Lamps that belong together switch as one tile.")
+                        ExplainerRow(symbol: "folder.fill", title: "Folder",
+                                     text: "Tucks dashboard cards away, like on the Home Screen.")
+                    }
+                }
+                .tag(2)
+
+                OnboardingPage(symbol: "homekit", title: "Connect Apple Home",
+                               text: "HomeControl reads and controls your accessories through Apple Home.") {
+                    accessStatus
+                }
+                .tag(3)
             }
             // Own dots, outside the pages: the system's sat on top of a long page's last lines.
             .tabViewStyle(.page(indexDisplayMode: .never))
@@ -92,6 +108,7 @@ struct OnboardingView: View {
         VStack(spacing: 12) {
             if page < lastPage {
                 primaryButton("Continue") { withAnimation { page += 1 } }
+                secondaryButton("Skip") { withAnimation { page = lastPage } }
             } else {
                 switch store.access {
                 case .notRequested, .pending:
@@ -138,6 +155,70 @@ struct OnboardingView: View {
     }
 }
 
+/// A few cards, one of them lifted and jiggling the way arranging looks in the app.
+private struct DashboardSketch: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var lifted = false
+
+    var body: some View {
+        Grid(horizontalSpacing: 10, verticalSpacing: 10) {
+            GridRow {
+                card("lightbulb.fill", .yellow).gridCellColumns(2)
+            }
+            GridRow {
+                card("sofa.fill", .blue)
+                card("lock.fill", .teal)
+                    .scaleEffect(lifted ? 1.08 : 1)
+                    .rotationEffect(.degrees(lifted ? 2 : -2))
+                    .shadow(color: .black.opacity(lifted ? 0.25 : 0.1), radius: lifted ? 14 : 4, y: lifted ? 8 : 2)
+            }
+            GridRow {
+                card("blinds.horizontal.open", .indigo)
+                card("thermometer.medium", .orange)
+            }
+        }
+        .frame(maxWidth: 280)
+        .accessibilityHidden(true)
+        .onAppear {
+            guard !reduceMotion else { return }
+            withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) { lifted = true }
+        }
+    }
+
+    private func card(_ symbol: String, _ tint: Color) -> some View {
+        Image(systemName: symbol)
+            .font(.title2.weight(.semibold))
+            .foregroundStyle(.white)
+            .frame(width: 44, height: 44)
+            .background(tint.gradient, in: .circle)
+            .frame(maxWidth: .infinity, minHeight: 74, alignment: .leading)
+            .padding(.horizontal, 12)
+            .background(.white.opacity(0.2), in: .rect(cornerRadius: 18, style: .continuous))
+            .overlay { RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(.white.opacity(0.35)) }
+    }
+}
+
+/// One idea, its symbol and a single line.
+private struct ExplainerRow: View {
+    let symbol: String
+    let title: LocalizedStringKey
+    let text: LocalizedStringKey
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: symbol)
+                .font(.title2.weight(.semibold))
+                .frame(width: 52, height: 52)
+                .background(.white.opacity(0.2), in: .rect(cornerRadius: 14, style: .continuous))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(.headline)
+                Text(text).font(.subheadline).foregroundStyle(.white.opacity(0.85))
+            }
+            Spacer(minLength: 0)
+        }
+    }
+}
+
 private struct OnboardingPage<Content: View>: View {
     /// SF Symbol for the hero; nil leaves the page to its content.
     let symbol: String?
@@ -147,6 +228,7 @@ private struct OnboardingPage<Content: View>: View {
     @State private var appeared = false
     /// Short screens (iPhone mini, SE) get a smaller hero, so a page fits without scrolling.
     @State private var isShort = false
+    @State private var height: CGFloat = 0
 
     var body: some View {
         ScrollView {
@@ -164,13 +246,16 @@ private struct OnboardingPage<Content: View>: View {
                 content
             }
             .padding(.horizontal, 32)
-            .padding(.top, isShort ? 16 : 48)
-            .padding(.bottom, 16)
+            .padding(.vertical, 16)
             .frame(maxWidth: 520)
-            .frame(maxWidth: .infinity)
+            // Centred in the page, still scrolling when it doesn't fit.
+            .frame(maxWidth: .infinity, minHeight: height)
         }
         .scrollBounceBehavior(.basedOnSize)
-        .onGeometryChange(for: Bool.self) { $0.size.height < 700 } action: { isShort = $0 }
+        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: {
+            height = $0
+            isShort = $0 < 700
+        }
         .onAppear { appeared.toggle() }
     }
 

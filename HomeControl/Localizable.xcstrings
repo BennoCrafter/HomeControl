@@ -187,6 +187,36 @@
         }
       }
     },
+    "A collection is a dashboard card with items from any rooms." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eine Sammlung ist eine Dashboard-Karte mit Objekten aus beliebigen Räumen."
+          }
+        }
+      }
+    },
+    "A folder holds dashboard cards to tidy them away. It switches nothing itself; use a group for that." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein Ordner nimmt Dashboard-Karten auf, um aufzuräumen. Er schaltet selbst nichts; dafür gibt es Gruppen."
+          }
+        }
+      }
+    },
+    "A group's items switch together and show as one tile, in the rooms, widgets and Control Center." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Objekte einer Gruppe schalten zusammen und erscheinen als eine Kachel – in den Räumen, Widgets und im Kontrollzentrum."
+          }
+        }
+      }
+    },
     "Access" : {
       "localizations" : {
         "de" : {
@@ -887,6 +917,16 @@
         }
       }
     },
+    "Groups and folders" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gruppen und Ordner"
+          }
+        }
+      }
+    },
     "Groups, dashboards, icons and backgrounds stay in sync for everyone through iCloud. Each person keeps their own dashboard." : {
       "localizations" : {
         "de" : {
@@ -923,6 +963,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Verlauf"
+          }
+        }
+      }
+    },
+    "Hold a card to move it, drag its corner to resize." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Halte eine Karte, um sie zu verschieben, und zieh an ihrer Ecke, um die Größe zu ändern."
           }
         }
       }
@@ -1143,6 +1193,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "L"
+          }
+        }
+      }
+    },
+    "Lamps that belong together switch as one tile." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lampen, die zusammengehören, schalten als eine Kachel."
           }
         }
       }
@@ -1887,6 +1947,16 @@
         }
       }
     },
+    "Skip" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Überspringen"
+          }
+        }
+      }
+    },
     "So they can switch the accessories too. Apple's Home screen for people opens." : {
       "localizations" : {
         "de" : {
@@ -2037,6 +2107,16 @@
         }
       }
     },
+    "Tucks dashboard cards away, like on the Home Screen." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Räumt Dashboard-Karten weg, wie auf dem Home-Bildschirm."
+          }
+        }
+      }
+    },
     "Turn Accessory On or Off" : {
       "localizations" : {
         "de" : {
@@ -2063,6 +2143,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dreh am Regler."
+          }
+        }
+      }
+    },
+    "Two ways to keep it tidy." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zwei Wege, Ordnung zu halten."
           }
         }
       }
@@ -2187,12 +2277,12 @@
         }
       }
     },
-    "Your rooms and accessories, on a dashboard you arrange yourself." : {
+    "Your dashboard" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deine Räume und dein Zubehör, auf einem Dashboard, das du selbst anordnest."
+            "value" : "Dein Dashboard"
           }
         }
       }

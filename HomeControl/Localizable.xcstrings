@@ -937,12 +937,12 @@
         }
       }
     },
-    "How brightness and shutter position are adjusted in the device details." : {
+    "How brightness and shutter position are adjusted in the device details, and how big the icons on room and group cards are: fewer per row are bigger." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wie Helligkeit und Rollladenposition in den Gerätedetails eingestellt werden."
+            "value" : "Wie Helligkeit und Rollladenposition in den Gerätedetails eingestellt werden und wie groß die Symbole auf Raum- und Gruppenkarten sind: Weniger pro Reihe sind größer."
           }
         }
       }
@@ -963,6 +963,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tippen auf Symbol"
+          }
+        }
+      }
+    },
+    "Icons per Row on Cards" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Symbole pro Reihe auf Karten"
           }
         }
       }
@@ -1193,6 +1203,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Freigabe verwalten"
+          }
+        }
+      }
+    },
+    "Manage Sharing…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Freigabe verwalten …"
           }
         }
       }
@@ -1477,6 +1497,16 @@
         }
       }
     },
+    "People" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personen"
+          }
+        }
+      }
+    },
     "Photo" : {
       "localizations" : {
         "de" : {
@@ -1683,6 +1713,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dieses Setup teilen"
+          }
+        }
+      }
+    },
+    "Share this setup through iCloud and give HomeKit access, so everyone in %@ has their own dashboard." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Teile dieses Setup über iCloud und gib HomeKit-Zugriff, damit alle in %@ ihr eigenes Dashboard haben."
           }
         }
       }

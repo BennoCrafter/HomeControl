@@ -387,16 +387,6 @@
         }
       }
     },
-    "Auto" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Auto"
-          }
-        }
-      }
-    },
     "Automatic" : {
       "localizations" : {
         "de" : {
@@ -457,12 +447,12 @@
         }
       }
     },
-    "Cards" : {
+    "Card Icons" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Karten"
+            "value" : "Kartensymbole"
           }
         }
       }
@@ -787,16 +777,6 @@
         }
       }
     },
-    "Fewer icons per row make them bigger, on room and group cards." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Weniger Symbole pro Reihe machen sie größer, auf Raum- und Gruppenkarten."
-          }
-        }
-      }
-    },
     "Folder" : {
       "localizations" : {
         "de" : {
@@ -1017,6 +997,16 @@
         }
       }
     },
+    "How big the icons on room and group cards are, on the dashboard and in Rooms." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wie groß die Symbole auf Raum- und Gruppenkarten sind, im Dashboard und in Räume."
+          }
+        }
+      }
+    },
     "How brightness and shutter position are adjusted in the device details." : {
       "localizations" : {
         "de" : {
@@ -1037,22 +1027,22 @@
         }
       }
     },
+    "Icon Size" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Symbolgröße"
+          }
+        }
+      }
+    },
     "Icon Tap" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tippen auf Symbol"
-          }
-        }
-      }
-    },
-    "Icons per Row" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Symbole pro Reihe"
           }
         }
       }
@@ -1143,6 +1133,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tritt %@ in HomeControl bei"
+          }
+        }
+      }
+    },
+    "L" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L"
           }
         }
       }
@@ -1253,6 +1253,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aussehen"
+          }
+        }
+      }
+    },
+    "M" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "M"
           }
         }
       }
@@ -1727,6 +1737,16 @@
         }
       }
     },
+    "S" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "S"
+          }
+        }
+      }
+    },
     "Save" : {
       "localizations" : {
         "de" : {
@@ -2143,6 +2163,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Was das runde Symbol auf der Kachel der Gruppe tut. Tippe auf den Rest der Kachel für die Steuerung jedes Mitglieds."
+          }
+        }
+      }
+    },
+    "XL" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "XL"
           }
         }
       }

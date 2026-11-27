@@ -82,8 +82,8 @@ struct LevelControl: View {
         springTask?.cancel()
         draft = value
         lastLocalChange = .now
-        // shortcut: fixed 0.1 s throttle, slow accessories may lag behind; the final value is always sent on release
-        if Date.now.timeIntervalSince(lastSent) > 0.1 {
+        // 0.05 s only limits redraws: the store keeps one HomeKit write in flight and skips stale values; release sends the last
+        if Date.now.timeIntervalSince(lastSent) > 0.05 {
             lastSent = .now
             level = value
         }
@@ -244,6 +244,40 @@ struct LevelControl: View {
                 }
                 .onEnded { _ in endDrag() }
         )
+    }
+}
+
+/// A small still of each style, for choosing it in Settings.
+struct ControlStylePreview: View {
+    let style: ControlStyle
+    let look: LevelControl.Look
+
+    private var tint: Color { look == .light ? .yellow : .indigo }
+
+    var body: some View {
+        switch style {
+        case .dial:
+            ZStack {
+                Circle().trim(from: 0, to: 0.75).rotation(.degrees(135))
+                    .stroke(.quaternary, style: StrokeStyle(lineWidth: 10, lineCap: .round))
+                Circle().trim(from: 0, to: 0.75 * 0.6).rotation(.degrees(135))
+                    .stroke(tint.gradient, style: StrokeStyle(lineWidth: 10, lineCap: .round))
+            }
+            .padding(5)
+            .aspectRatio(1, contentMode: .fit)
+        case .pill:
+            ZStack(alignment: .bottom) {
+                Rectangle().fill(.quaternary)
+                if look == .light {
+                    Rectangle().fill(tint.gradient).frame(height: 72 * 0.6)
+                } else {
+                    Rectangle().fill(tint.opacity(0.2))
+                    ShutterSlats().fill(tint.gradient).frame(height: 72 * 0.4).frame(maxHeight: .infinity, alignment: .top)
+                }
+            }
+            .frame(width: 38)
+            .clipShape(.rect(cornerRadius: 12, style: .continuous))
+        }
     }
 }
 

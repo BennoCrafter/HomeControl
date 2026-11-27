@@ -1,5 +1,20 @@
 import SwiftUI
 
+/// How big the icons on room, group and collection cards are: a scale on each card's base size, set in Settings.
+enum CardIcons {
+    static let key = "cardIconScale"
+    static let scales: [(scale: Double, title: LocalizedStringKey)] = [(1, "S"), (1.3, "M"), (1.6, "L"), (2, "XL")]
+
+    static func size(large: Bool, scale: Double) -> CGFloat {
+        (large ? 54 : 42) * scale
+    }
+
+    /// A card just tall enough for one row of icons: padding, header and the gap under it, names when large.
+    static func cardHeight(large: Bool, scale: Double) -> CGFloat {
+        14 + 34 + 10 + size(large: large, scale: scale) + (large ? 24 : 0) + 14
+    }
+}
+
 /// A room, group or collection: its name, what's on, and a quick toggle per item.
 struct RoomCard: View {
     let title: String
@@ -13,7 +28,7 @@ struct RoomCard: View {
     @Environment(HomeStore.self) private var store
     @Environment(\.itemPrefs) private var prefs
     @Environment(\.tileOpacity) private var tileOpacity
-    @AppStorage("cardIconsPerRow") private var iconsPerRow = 0
+    @AppStorage(CardIcons.key) private var iconScale = 1.0
     @State private var toggles = 0
 
     private var devices: [Device] {
@@ -43,13 +58,10 @@ struct RoomCard: View {
             }
             .buttonStyle(PressScale(scale: 0.97))
             GeometryReader { geometry in
-                // Automatic: a fixed icon size, as many as fit; otherwise that many, sized to the width.
-                // Never taller than the card has room for, or a short card (the Rooms tab's) cut the icons off.
-                let size: CGFloat = iconsPerRow == 0 ? (large ? 54 : 42)
-                    : max(24, min((geometry.size.width - 8 * CGFloat(iconsPerRow - 1)) / CGFloat(iconsPerRow),
-                                  geometry.size.height - (large ? 24 : 0)))
-                // As many as fit: when the height capped the size, more than asked for fit in a row.
-                let perRow = max(1, Int((geometry.size.width + 8) / (size + 8) + 0.01))
+                // Relative to the card's own base size, so the dashboard's small cards and the Rooms tab's large ones scale alike;
+                // never taller than the card has room for.
+                let size = min(CardIcons.size(large: large, scale: iconScale), max(24, geometry.size.height - (large ? 24 : 0)))
+                let perRow = max(1, Int((geometry.size.width + 8) / (size + 8)))
                 let rows = max(1, Int((geometry.size.height + 8) / (size + (large ? 24 : 8))))
                 LazyVGrid(columns: Array(repeating: GridItem(.fixed(size), spacing: 8), count: perRow), alignment: .leading, spacing: 8) {
                     ForEach(devices.prefix(perRow * rows)) { device in

@@ -201,8 +201,8 @@ struct MemberRow: View {
                 Slider(value: Binding(get: { draft ?? level.wrappedValue }, set: { value in
                     release?.cancel()
                     draft = value
-                    // shortcut: fixed 0.1 s throttle like LevelControl; the final value is always sent on release
-                    if Date.now.timeIntervalSince(lastSent) > 0.1 {
+                    // Same 0.05 s as LevelControl: the store keeps one write in flight, so this only limits redraws
+                    if Date.now.timeIntervalSince(lastSent) > 0.05 {
                         lastSent = .now
                         level.wrappedValue = value
                     }

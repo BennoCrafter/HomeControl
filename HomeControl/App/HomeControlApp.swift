@@ -18,7 +18,7 @@ struct HomeControlApp: App {
                 // The whole setup syncs through iCloud and can be shared with family; the widget snapshot stays local.
                 $0.defaultSyncEngine = try SyncEngine(
                     for: $0.defaultDatabase,
-                    tables: Home.self, RoomPref.self, ItemPref.self, DashboardCard.self, DeviceGroup.self, Appearance.self, HomeItem.self,
+                    tables: Home.self, RoomPref.self, ItemPref.self, DashboardCard.self, DeviceGroup.self, Appearance.self, HomeItem.self, ItemEvent.self,
                     containerIdentifier: Schema.iCloudContainer
                 )
             }
@@ -30,6 +30,7 @@ struct HomeControlApp: App {
         _store = State(initialValue: HomeStore.shared)
         #if DEBUG
             checkDashboardSharing()
+            checkHistoryRuns()
         #endif
         setUpWidgetActions()
     }

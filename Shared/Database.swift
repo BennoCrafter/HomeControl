@@ -92,6 +92,19 @@ struct DeviceGroup: Identifiable, Hashable, Sendable {
     var deviceID: UUID { id }
 }
 
+/// An item switching between its two states, for "Open for 5 minutes" and its history. Kept 30 days.
+@Table("events")
+struct ItemEvent: Identifiable, Hashable, Sendable {
+    let id: UUID
+    var homeID: String
+    var deviceID: UUID
+    var isActive = false
+    /// When the app saw it change, or first saw the new state.
+    var date: Date
+    /// Set when the app wasn't watching: it changed sometime after this. `distantPast` when nothing earlier is known.
+    var notSeenSince: Date?
+}
+
 /// The home's background and how see-through the tiles are.
 @Table("appearances")
 struct Appearance: Identifiable, Hashable, Sendable {
@@ -268,6 +281,21 @@ enum Schema {
         }
         migrator.registerMigration("Add group icon opens") { db in
             try #sql(#"ALTER TABLE "groups" ADD COLUMN "iconOpens" INTEGER NOT NULL DEFAULT 0"#).execute(db)
+        }
+        migrator.registerMigration("Add events") { db in
+            try #sql(
+                """
+                CREATE TABLE "events" (
+                  "id" TEXT PRIMARY KEY NOT NULL ON CONFLICT REPLACE DEFAULT (uuid()),
+                  "homeID" TEXT NOT NULL REFERENCES "homes"("id") ON DELETE CASCADE,
+                  "deviceID" TEXT NOT NULL,
+                  "isActive" INTEGER NOT NULL DEFAULT 0,
+                  "date" TEXT NOT NULL,
+                  "notSeenSince" TEXT
+                ) STRICT
+                """
+            ).execute(db)
+            try #sql(#"CREATE INDEX "events_deviceID_date" ON "events"("deviceID", "date")"#).execute(db)
         }
         return migrator
     }

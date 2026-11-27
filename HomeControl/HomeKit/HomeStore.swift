@@ -23,15 +23,17 @@ final class HomeStore: NSObject {
 
     private(set) var devices: [Device] = [] {
         didSet {
-            let old = Dictionary(oldValue.map { ($0.id, $0.currentState) }) { first, _ in first }
-            for device in devices where old[device.id] != device.currentState {
-                lastChanged[device.id] = .now
-            }
+            recordChanges()
             saveSnapshot()
         }
     }
-    /// When an item's reported state last changed, while the app was running: HomeKit doesn't keep a history.
-    private(set) var lastChanged: [UUID: Date] = [:]
+    /// Each item's latest saved state change, read from the history once per home: HomeKit keeps none.
+    private(set) var since: [UUID: ItemEvent] = [:]
+    @ObservationIgnored private var sinceHomeID: String?
+    /// When the app became active; nil in the background, when HomeKit tells it nothing.
+    @ObservationIgnored private var activeSince: Date? = .now
+    /// When the app last watched the home, so a change found later happened sometime after it.
+    @ObservationIgnored private var watchedUntil = UserDefaults.standard.object(forKey: "watchedUntil") as? Date
     private(set) var homeName = "Home"
     private(set) var access = HomeAccess.notRequested
     private(set) var homes: [HomeOption] = [.demo]
@@ -524,6 +526,54 @@ extension HomeStore {
             try database.write { db in try Schema.ensureHome(currentHomeID, name: homeName, in: db) }
         } catch {
             logger.error("Saving the home failed: \(error)")
+        }
+    }
+
+    /// Called as the app comes and goes: changes found right after coming back happened while it wasn't watching.
+    func watching(_ active: Bool) {
+        if active {
+            activeSince = .now
+        } else {
+            activeSince = nil
+            watchedUntil = .now
+            UserDefaults.standard.set(Date.now, forKey: "watchedUntil")
+        }
+    }
+
+    /// Saves every item that switched since its last saved state; the history is what tells how long it's been.
+    private func recordChanges() {
+        guard let currentHomeID else { return }
+        @Dependency(\.defaultDatabase) var database
+        let loading = sinceHomeID != currentHomeID
+        if loading {
+            sinceHomeID = currentHomeID
+            do {
+                let events = try database.write { db in
+                    try ItemEvent.where { $0.date.lt(Date.now.addingTimeInterval(-30 * 24 * 3600)) }.delete().execute(db)
+                    return try ItemEvent.where { $0.homeID.eq(currentHomeID) }.order { $0.date.desc() }.fetchAll(db)
+                }
+                since = Dictionary(events.map { ($0.deviceID, $0) }) { newest, _ in newest }
+            } catch {
+                logger.error("Reading the history failed: \(error)")
+            }
+        }
+        let now = Date.now
+        // shortcut: values still arriving 5 s after coming back count as missed (unless this app just switched it);
+        // a slow hub may stamp a live change as missed
+        let missed = loading || activeSince.map { now.timeIntervalSince($0) < 5 } ?? true
+        let events = devices
+            .filter { $0.isReachable && $0.kind != .camera && since[$0.id]?.isActive != $0.isActive }
+            .map { device in
+                ItemEvent(id: UUID(), homeID: currentHomeID, deviceID: device.id, isActive: device.isActive, date: now,
+                          notSeenSince: since[device.id] == nil ? .distantPast
+                              : missed && now.timeIntervalSince(lastWrite[device.id] ?? .distantPast) > 5 ? (watchedUntil ?? .distantPast) : nil)
+            }
+        guard !events.isEmpty else { return }
+        for event in events { since[event.deviceID] = event }
+        do {
+            try database.write { db in try ItemEvent.insert { events }.execute(db) }
+        } catch {
+            logger.error("Saving the history failed: \(error)")
         }
     }
 

@@ -103,6 +103,15 @@ struct Device: Identifiable, Codable, Hashable {
         }
     }
 
+    /// What `isActive` means for this kind, for "Open for 5 minutes" and the history.
+    func stateName(active: Bool) -> String {
+        switch kind {
+        case .lock: active ? "Locked" : "Unlocked"
+        case .garage, .blinds, .contact: active ? "Open" : "Closed"
+        default: active ? "On" : "Off"
+        }
+    }
+
     /// A contact sensor on a window rather than a door, going by its name.
     var isWindow: Bool {
         ["window", "fenster"].contains { name.lowercased().contains($0) }

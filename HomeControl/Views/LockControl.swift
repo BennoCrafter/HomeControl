@@ -78,7 +78,6 @@ struct LockControl: View {
 /// A door that swings open with the sensor, and when it last changed.
 struct ContactView: View {
     let device: Device
-    let since: Date?
     @Environment(\.itemPrefs) private var prefs
 
     var body: some View {
@@ -105,13 +104,7 @@ struct ContactView: View {
                 .font(.largeTitle.bold())
                 .foregroundStyle(device.isContactOpen ? device.kind.tint : .primary)
                 .contentTransition(.interpolate)
-            if let since {
-                // Updates itself: "for 5 minutes".
-                Text("\(device.isContactOpen ? "Open" : "Closed") for \(since, style: .relative)")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
-            }
+            SinceText(device: device)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 8)

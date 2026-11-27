@@ -40,9 +40,13 @@ struct DeviceDetailView: View {
                         CameraCard(device: current)
                             .aspectRatio(16 / 9, contentMode: .fit)
                     } else if current.kind == .contact {
-                        ContactView(device: current, since: store.lastChanged[current.id])
+                        ContactView(device: current)
                     } else {
                         DeviceControls(device: binding)
+                        SinceText(device: current)
+                    }
+                    if current.kind != .camera {
+                        ItemHistory(device: current)
                     }
                 }
                 .frame(maxWidth: 520)

@@ -93,7 +93,10 @@ struct ContentView: View {
         #endif
         .onOpenURL(perform: open)
         .onChange(of: homes) { store.homesChanged() }
-        .onChange(of: scenePhase) { _, phase in if phase == .active { store.readAll() } }
+        .onChange(of: scenePhase) { _, phase in
+            if phase != .inactive { store.watching(phase == .active) }
+            if phase == .active { store.readAll() }
+        }
         .sheet(item: $linkedItem) { DeviceDetailView(device: $0).environment(store) }
         .sheet(isPresented: $showingSettings) {
             SettingsView()

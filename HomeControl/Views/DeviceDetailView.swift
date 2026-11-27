@@ -1,57 +1,151 @@
 import SwiftUI
 
+/// A glass sheet with one small header and the item's control in the middle; editing waits behind "…".
 struct DeviceDetailView: View {
     @Environment(HomeStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     let device: Device
+    /// Pushed onto the dashboard's navigation instead of shown as a sheet.
+    var isPushed = false
+    @Environment(\.itemPrefs) private var prefs
+    @State private var renaming = false
+    @State private var newName = ""
+    @State private var choosingIcon = false
+    @State private var grouping = false
+
+    private var homeID: String { store.currentHomeID ?? "" }
 
     var body: some View {
+        if let group = store.group(for: device.id) {
+            GroupDetailView(group: group, isPushed: isPushed)
+        } else if isPushed {
+            details.background(HomeBackground())
+        } else {
+            NavigationStack { details }
+                // Below full height the sheet stays glass and the home shows through; full height turns it opaque.
+                .presentationDetents([.fraction(0.72), .large])
+                .presentationSizing(.page) // the default form sheet on Mac/iPad is too short for the dial
+        }
+    }
+
+    private var details: some View {
         let binding = store.binding(for: device)
         let current = binding.wrappedValue
-        NavigationStack {
-            Form {
-                Section {
-                    VStack(spacing: 6) {
-                        Image(systemName: current.icon)
-                            .font(.system(size: 40))
-                            .foregroundStyle(current.isActive ? current.kind.tint : .secondary)
-                            .contentTransition(.symbolEffect(.replace))
-                            .frame(height: 52)
-                        Text(current.name).font(.title2.bold())
-                        if current.accessoryName != current.name {
-                            Text(current.accessoryName).foregroundStyle(.secondary)
-                        }
-                        Text("\(current.room) · \(current.status)")
-                            .foregroundStyle(.secondary)
-                            .contentTransition(.interpolate)
+        return ScrollView {
+                VStack(spacing: 24) {
+                    if !current.isReachable {
+                        ContentUnavailableView("No Response", systemImage: "exclamationmark.triangle",
+                                               description: Text("\(current.name) can't be reached. Check its power and network."))
+                    } else if current.kind == .camera {
+                        CameraCard(device: current)
+                            .aspectRatio(16 / 9, contentMode: .fit)
+                    } else if current.kind == .contact {
+                        ContactView(device: current)
+                    } else {
+                        DeviceControls(device: binding)
+                        SinceText(device: current)
                     }
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
-                    .animation(.smooth, value: current.status)
+                    if current.kind != .camera {
+                        ItemHistory(device: current)
+                    }
                 }
-                if current.isReachable && current.kind.isControllable {
-                    Section("Control") { DeviceControls(device: binding) }
-                }
+                .frame(maxWidth: 520)
+                .padding(.horizontal)
+                .padding(.vertical, 24)
+                .frame(maxWidth: .infinity)
             }
-            .formStyle(.grouped)
-            .navigationTitle(current.name)
+            .defaultScrollAnchor(.center, for: .alignment)
+            .containerBackground(.clear, for: .navigation) // let the sheet's glass through
+            .scrollBounceBehavior(.basedOnSize)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+                ToolbarItem(placement: .principal) { header(current) }
+                ToolbarItem(placement: isPushed ? .topBarTrailing : .topBarLeading) { editMenu(current) }
+                if !isPushed {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done", systemImage: "checkmark") { dismiss() }
+                    }
+                }
+            }
+            .alert("Rename", isPresented: $renaming) {
+                TextField("Name", text: $newName)
+                Button("Rename") {
+                    let name = newName.trimmingCharacters(in: .whitespaces)
+                    if !name.isEmpty { store.rename(current, to: name) }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Also renames it in Apple Home and for Siri.")
+            }
+            .sheet(isPresented: $choosingIcon) {
+                IconPicker(title: current.name, current: prefs[current.id]?.icon, tint: current.kind.tint) { icon in
+                    Prefs.update(item: current.id, in: homeID) { $0.icon = icon }
+                }
+            }
+            .sheet(isPresented: $grouping) {
+                GroupEditor(kind: .group, preselected: [current.id]).environment(store)
+            }
+    }
+
+    /// Icon, name, and room with state, in one line's height.
+    private func header(_ current: Device) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: current.icon(prefs))
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(current.isActive ? AnyShapeStyle(.white) : AnyShapeStyle(.secondary))
+                .frame(width: 30, height: 30)
+                .background(current.isActive ? AnyShapeStyle(current.kind.tint.gradient) : AnyShapeStyle(.quaternary), in: .circle)
+                .contentTransition(.symbolEffect(.replace))
+            VStack(alignment: .leading, spacing: 0) {
+                Text(current.name).font(.headline).lineLimit(1).minimumScaleFactor(0.7)
+                Text("\(current.room) · \(current.status)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .contentTransition(.numericText())
             }
         }
-        .presentationSizing(.page) // the default form sheet on Mac/iPad is too short for the dial
+        .animation(.smooth, value: current.status)
+    }
+
+    private func editMenu(_ current: Device) -> some View {
+        let pref = prefs[current.id]
+        return Menu {
+            Button("Rename…", systemImage: "pencil") {
+                newName = current.name
+                renaming = true
+            }
+            Picker(selection: Binding(get: { current.room }, set: { store.move(current, to: $0) })) {
+                ForEach(store.allRooms, id: \.self) { Text($0).tag($0) }
+            } label: {
+                Label("Room", systemImage: "square.split.bottomrightquarter")
+            }
+            .pickerStyle(.menu)
+            Button("Change Icon", systemImage: "square.grid.2x2") { choosingIcon = true }
+            Divider()
+            Button(pref?.isPinned == true ? "Unpin" : "Pin to Top", systemImage: pref?.isPinned == true ? "pin.slash" : "pin") {
+                Prefs.update(item: current.id, in: homeID) { $0.isPinned.toggle() }
+            }
+            Button(pref?.isHidden == true ? "Show" : "Hide", systemImage: pref?.isHidden == true ? "eye" : "eye.slash") {
+                Prefs.update(item: current.id, in: homeID) { $0.isHidden.toggle() }
+            }
+            if current.kind != .camera {
+                Button("Group With…", systemImage: "square.stack.3d.up") { grouping = true }
+            }
+        } label: {
+            Label("Edit", systemImage: "ellipsis")
+        }
     }
 }
 
 struct DeviceControls: View {
     @Binding var device: Device
+    @Environment(HomeStore.self) private var store
 
     var body: some View {
         switch device.kind {
         case .light where device.hasValue:
-            LevelControl(level: brightness, look: .light, tint: device.kind.tint, icon: device.icon) {
+            LevelControl(level: level, look: .light, tint: device.kind.tint, live: stream) {
                 device.isOn.toggle()
             }
             .frame(maxWidth: .infinity)
@@ -61,18 +155,25 @@ struct DeviceControls: View {
                 .frame(maxWidth: .infinity)
                 .listRowBackground(Color.clear)
         case .thermostat:
-            Toggle("Heating", isOn: $device.isOn)
-            Stepper("Target \(Device.celsius(device.value))", value: $device.value, in: 10...30, step: 0.5)
+            VStack(spacing: 14) {
+                Toggle("Heating", isOn: $device.isOn)
+                Divider()
+                Stepper("Target \(Device.celsius(device.value))", value: $device.value, in: 10...30, step: 0.5)
+            }
+            .padding()
+            .background(.regularMaterial, in: .rect(cornerRadius: 20, style: .continuous))
         case .lock:
-            Toggle("Locked", isOn: $device.isOn)
+            LockControl(device: $device)
+                .frame(maxWidth: .infinity)
+                .listRowBackground(Color.clear)
         case .garage:
             GarageControl(device: $device)
                 .frame(maxWidth: .infinity)
                 .listRowBackground(Color.clear)
-        case .contact:
+        case .contact, .camera:
             EmptyView()
         case .blinds:
-            LevelControl(level: $device.value, look: .shutter, tint: device.kind.tint, icon: device.icon) {
+            LevelControl(level: level, look: .shutter, tint: device.kind.tint, live: stream) {
                 device.value = device.value > 0 ? 0 : 1
             }
             .frame(maxWidth: .infinity)
@@ -86,17 +187,12 @@ struct DeviceControls: View {
         }
     }
 
-    /// Brightness where 0 means off, so dragging to the bottom turns the light off and dragging up turns it on.
-    private var brightness: Binding<Double> {
-        Binding(
-            get: { device.isOn ? device.value : 0 },
-            set: { level in
-                var updated = device
-                updated.isOn = level > 0.005
-                if updated.isOn { updated.value = level }
-                device = updated
-            }
-        )
+    private var level: Binding<Double> {
+        Binding(get: { device.level }, set: { device = device.setting(level: $0) })
+    }
+
+    private func stream(_ level: Double) {
+        store.stream(device.setting(level: level))
     }
 }
 
@@ -109,11 +205,27 @@ struct PowerButton: View {
     var body: some View {
         Button { isOn.toggle() } label: {
             ZStack {
-                Circle().stroke(.quaternary, lineWidth: 30)
+                Circle().stroke(.quaternary, lineWidth: 44)
+                // No sweep: a switch has no in-between, so the whole ring pulses on at once.
                 Circle()
-                    .trim(from: 0, to: isOn ? 1 : 0)
-                    .rotation(.degrees(-90))
-                    .stroke(tint.gradient, style: StrokeStyle(lineWidth: 30, lineCap: .round))
+                    .stroke(tint.gradient, lineWidth: 44)
+                    .opacity(isOn ? 1 : 0)
+                    .scaleEffect(isOn ? 1 : 0.85)
+                // A ripple that rings out each time it turns on.
+                Circle()
+                    .stroke(tint, lineWidth: 6)
+                    .keyframeAnimator(initialValue: Ripple(), trigger: isOn) { ring, ripple in
+                        ring.scaleEffect(ripple.scale).opacity(ripple.opacity)
+                    } keyframes: { _ in
+                        KeyframeTrack(\.scale) {
+                            CubicKeyframe(1, duration: 0.01)
+                            CubicKeyframe(1.35, duration: 0.6)
+                        }
+                        KeyframeTrack(\.opacity) {
+                            CubicKeyframe(isOn ? 0.8 : 0, duration: 0.01)
+                            CubicKeyframe(0, duration: 0.6)
+                        }
+                    }
                 VStack(spacing: 4) {
                     Image(systemName: icon)
                         .font(.title2)
@@ -127,14 +239,23 @@ struct PowerButton: View {
                 .padding(.vertical, 8)
                 .background(.ultraThinMaterial, in: .rect(cornerRadius: 14))
             }
-            .padding(15)
+            .padding(22)
             .frame(width: 230, height: 230)
             .contentShape(.circle)
         }
         .buttonStyle(.plain)
-        .animation(.spring(duration: 0.5, bounce: 0.2), value: isOn)
-        .sensoryFeedback(.impact(weight: .medium), trigger: isOn)
+        .keyframeAnimator(initialValue: 1.0, trigger: isOn) { $0.scaleEffect($1) } keyframes: { _ in
+            SpringKeyframe(isOn ? 1.08 : 0.94, duration: 0.12)
+            SpringKeyframe(1, duration: 0.5, spring: .bouncy)
+        }
+        .animation(.spring(duration: 0.35, bounce: 0.45), value: isOn)
+        .sensoryFeedback(trigger: isOn) { _, on in on ? .impact(weight: .heavy) : .impact(weight: .light) }
         .accessibilityLabel("Power")
         .accessibilityValue(isOn ? "On" : "Off")
     }
+}
+
+private struct Ripple {
+    var scale = 1.0
+    var opacity = 0.0
 }

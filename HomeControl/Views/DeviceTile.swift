@@ -1,59 +1,126 @@
 import SwiftUI
 
 struct DeviceTile: View {
+    private var pref: ItemPref? { prefs[device.id] }
+    private var homeID: String { store.currentHomeID ?? "" }
+
     @Environment(HomeStore.self) private var store
     let device: Device
     let showRoom: Bool
     let openDetail: () -> Void
     @State private var confirming = false
     @State private var toggles = 0
+    @State private var choosingIcon = false
+    @State private var opens = 0
+    @State private var editingGroup = false
+    @Environment(\.tileOpacity) private var tileOpacity
+    @Environment(\.itemPrefs) private var prefs
+    /// A one-cell dashboard card: just the icon.
+    @State private var isCompact = false
 
     var body: some View {
         let binding = store.binding(for: device)
         let current = binding.wrappedValue
-        VStack(spacing: 4) {
-            // Tapping the icon toggles, tapping elsewhere opens details (like the Home app).
+        // Split tile: the round icon toggles, the rest of the tile opens the details.
+        HStack(spacing: 12) {
+            if isCompact { Spacer(minLength: 0) }
             Button {
-                if current.confirmationAction != nil {
+                if !current.kind.isControllable || store.group(for: device.id)?.iconOpens == true {
+                    // A sensor has nothing to switch, and some groups are set to open: the icon opens it, like the rest of the tile.
+                    opens += 1
+                    openDetail()
+                } else if current.confirmationAction != nil {
                     confirming = true
                 } else {
                     binding.wrappedValue = current.toggled()
                     toggles += 1
                 }
             } label: {
-                Image(systemName: current.icon)
-                    .font(.title)
-                    .foregroundStyle(current.isActive ? current.kind.tint : .secondary)
-                    .frame(width: 48, height: 48)
+                Image(systemName: current.icon(prefs))
+                    .font(.title2.weight(.semibold))
+                    .contentTransition(.symbolEffect(.replace))
+                    .symbolEffect(.bounce, value: toggles)
+                    .foregroundStyle(current.isActive ? AnyShapeStyle(.white) : AnyShapeStyle(.secondary))
+                    .frame(width: 50, height: 50)
+                    .background(current.isActive ? AnyShapeStyle(current.kind.tint.gradient) : AnyShapeStyle(.quaternary), in: .circle)
+                    .shadow(color: current.isActive ? current.kind.tint.opacity(0.5) : .clear, radius: 8, y: 3)
             }
-            .buttonStyle(.plain)
-            .disabled(!current.isReachable || !current.kind.isControllable)
-            .accessibilityLabel("Toggle \(current.name)")
-            Spacer(minLength: 4)
-            if showRoom {
-                Text(current.room).font(.caption).foregroundStyle(.secondary)
+            .buttonStyle(PressScale(scale: 0.82))
+            .disabled(!current.isReachable)
+            .accessibilityLabel(current.kind.isControllable ? "Toggle \(current.name)" : current.name)
+            if !isCompact {
+                VStack(alignment: .leading, spacing: 2) {
+                    if showRoom {
+                        Text(current.room).font(.caption).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.5)
+                    }
+                    // Shrinks to fit rather than cutting the name off.
+                    Text(current.name)
+                        .font(.headline)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.4)
+                        .allowsTightening(true)
+                    Text(current.status)
+                        .font(.subheadline)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.5)
+                        .foregroundStyle(current.isReachable ? AnyShapeStyle(.secondary) : AnyShapeStyle(.orange))
+                        .contentTransition(.numericText())
+                }
             }
-            Text(current.name)
-                .font(.headline)
-                .fixedSize(horizontal: false, vertical: true)
-            Text(current.status)
-                .font(.subheadline)
-                .foregroundStyle(current.isReachable ? AnyShapeStyle(.secondary) : AnyShapeStyle(.orange))
+            Spacer(minLength: 0)
+            // No chevron: the room goes to the name. Only a problem gets a sign.
+            if !current.isReachable, !isCompact {
+                Image(systemName: "exclamationmark.triangle.fill").font(.caption.bold()).foregroundStyle(.orange)
+            }
         }
-        .multilineTextAlignment(.center)
-        .padding()
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .overlay(alignment: .topTrailing) {
-            if !current.isReachable {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundStyle(.orange)
-                    .padding(10)
+        .padding(isCompact ? 8 : 14)
+        // Fills a dashboard card of any size; the rooms' grid makes it at least a tile high.
+        .frame(maxWidth: .infinity, minHeight: isCompact ? nil : 84, maxHeight: .infinity, alignment: .leading)
+        .onGeometryChange(for: Bool.self) { $0.size.width < 130 } action: { isCompact = $0 }
+        .background {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(current.isActive ? AnyShapeStyle(current.kind.tint.opacity(0.22)) : AnyShapeStyle(Color(.secondarySystemGroupedBackground).opacity(tileOpacity)))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .strokeBorder(current.isActive ? current.kind.tint.opacity(0.35) : .white.opacity(0.08))
+                }
+        }
+        .animation(.spring(duration: 0.35, bounce: 0.3), value: current.isActive)
+        .contentShape(.rect(cornerRadius: 20))
+        .keyframeAnimator(initialValue: 1.0, trigger: opens) { $0.scaleEffect($1) } keyframes: { _ in
+            SpringKeyframe(0.95, duration: 0.08)
+            SpringKeyframe(1, duration: 0.3, spring: .bouncy)
+        }
+        .onTapGesture {
+            opens += 1
+            openDetail()
+        }
+        .overlay(alignment: .topLeading) {
+            if pref?.isPinned == true {
+                Image(systemName: "pin.fill").font(.caption2).foregroundStyle(.orange).padding(10)
             }
         }
-        .background(current.isActive ? AnyShapeStyle(current.kind.tint.opacity(0.25)) : AnyShapeStyle(.quinary),
-                    in: .rect(cornerRadius: 16))
-        .contentShape(.rect(cornerRadius: 16))
-        .onTapGesture(perform: openDetail)
+        .opacity(pref?.isHidden == true ? 0.45 : 1)
+        .contextMenu {
+            Button(pref?.isPinned == true ? "Unpin" : "Pin to Top", systemImage: pref?.isPinned == true ? "pin.slash" : "pin") {
+                withAnimation(.snappy) { Prefs.update(item: device.id, in: homeID) { $0.isPinned.toggle() } }
+            }
+            if store.group(for: device.id) == nil {
+                Button("Change Icon", systemImage: "square.grid.2x2") { choosingIcon = true }
+            }
+            Button(store.group(for: device.id) == nil ? "Group With…" : "Edit Group…", systemImage: "square.stack.3d.up") { editingGroup = true }
+            Button(pref?.isHidden == true ? "Show" : "Hide", systemImage: pref?.isHidden == true ? "eye" : "eye.slash") {
+                withAnimation(.snappy) { Prefs.update(item: device.id, in: homeID) { $0.isHidden.toggle() } }
+            }
+        }
+        .sheet(isPresented: $choosingIcon) {
+            IconPicker(title: current.name, current: pref?.icon, tint: current.kind.tint) { icon in
+                Prefs.update(item: device.id, in: homeID) { $0.icon = icon }
+            }
+        }
+        .sheet(isPresented: $editingGroup) {
+            GroupEditor(kind: .group, existing: store.group(for: device.id), preselected: [device.id]).environment(store)
+        }
         .confirmationDialog("\(current.confirmationAction ?? "") \(current.name)?",
                             isPresented: $confirming, titleVisibility: .visible) {
             Button(current.confirmationAction ?? "OK") {
@@ -61,6 +128,7 @@ struct DeviceTile: View {
                 toggles += 1
             }
         }
-        .sensoryFeedback(.impact(weight: .light), trigger: toggles)
+        .sensoryFeedback(.impact(weight: .medium), trigger: toggles)
+        .sensoryFeedback(.impact(weight: .light), trigger: opens)
     }
 }

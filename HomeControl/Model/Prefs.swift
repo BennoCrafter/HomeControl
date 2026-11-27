@@ -16,7 +16,7 @@ enum Prefs {
                 try RoomPref.update(room).execute(db)
             }
         } catch {
-            logger.error("Saving room \(name) failed: \(error)")
+            HomeStore.shared.report(error, saving: "room \(name)")
         }
     }
 
@@ -30,7 +30,7 @@ enum Prefs {
                 try ItemPref.update(item).execute(db)
             }
         } catch {
-            logger.error("Saving item \(id) failed: \(error)")
+            HomeStore.shared.report(error, saving: "item \(id)")
         }
     }
 

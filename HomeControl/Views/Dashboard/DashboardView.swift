@@ -539,18 +539,26 @@ struct DashboardView: View {
         let spot = DashboardEngine.freeSpot(width: size.width, height: size.height, in: Array(committed(columns: columns).values), columns: columns)
         @Dependency(\.defaultDatabase) var database
         withAnimation(.spring(duration: 0.4, bounce: 0.35)) {
-            try? database.write { db in
-                try DashboardCard.insert {
-                    DashboardCard.Draft(homeID: homeID, kind: kind, ref: ref, x: spot.x, y: spot.y, width: spot.width, height: spot.height,
-                                        columns: columns, memberID: profiles.selected, folderID: folder?.id)
-                }.execute(db)
+            do {
+                try database.write { db in
+                    try DashboardCard.insert {
+                        DashboardCard.Draft(homeID: homeID, kind: kind, ref: ref, x: spot.x, y: spot.y, width: spot.width, height: spot.height,
+                                            columns: columns, memberID: profiles.selected, folderID: folder?.id)
+                    }.execute(db)
+                }
+            } catch {
+                store.report(error, saving: "a dashboard card")
             }
         }
     }
 
     private func remove(_ card: DashboardCard) {
         @Dependency(\.defaultDatabase) var database
-        try? database.write { db in try DashboardCard.find(card.id).delete().execute(db) }
+        do {
+            try database.write { db in try DashboardCard.find(card.id).delete().execute(db) }
+        } catch {
+            store.report(error, saving: "the removal of a card")
+        }
         // A collection or folder lives in its card; gone once no layout shows it any more.
         if card.kind == .collection || card.kind == .folder, let id = UUID(uuidString: card.ref),
            !allCards.contains(where: { $0.id != card.id && $0.kind == card.kind && $0.ref == card.ref }) {
@@ -571,7 +579,7 @@ struct DashboardView: View {
                 }
             }
         } catch {
-            logger.error("Saving the dashboard failed: \(error)")
+            store.report(error, saving: "the dashboard")
         }
     }
 

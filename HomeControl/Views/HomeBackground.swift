@@ -221,7 +221,7 @@ struct AppearanceSection: View {
         do {
             try database.write { db in try Appearance.upsert { new }.execute(db) }
         } catch {
-            logger.error("Saving the appearance failed: \(error)")
+            HomeStore.shared.report(error, saving: "the appearance")
         }
     }
 }

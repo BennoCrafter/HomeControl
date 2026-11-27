@@ -64,6 +64,10 @@ final class HomeStore: NSObject {
     /// When this app last asked an item to change; until then a differing current state is it still moving.
     @ObservationIgnored private var lastWrite: [UUID: Date] = [:]
     @ObservationIgnored private var pendingWidgetTaps = 0
+    /// Someone shared this home view-only and a change was refused; the app says so instead of springing back silently.
+    var writeRefused = false
+    /// Joining a family member's shared home failed; shown, since the invitation link gives no other sign.
+    var joinFailure: String?
     @ObservationIgnored private var snapshotTask: Task<Void, Never>?
     /// One HomeKit write per item at a time: queued writes made a dragged light trail far behind the finger.
     @ObservationIgnored private var writing: [UUID: Task<Void, any Error>] = [:]
@@ -590,6 +594,12 @@ extension HomeStore {
         } catch {
             logger.error("Saving the home failed: \(error)")
         }
+    }
+
+    /// For every failed save the user made: logged, and a refused write on a view-only share is explained once.
+    func report(_ error: any Error, saving what: String) {
+        logger.error("Saving \(what) failed: \(error)")
+        if let error = error as? DatabaseError, error.message == SyncEngine.writePermissionError { writeRefused = true }
     }
 
     /// Called as the app comes and goes: changes found right after coming back happened while it wasn't watching.

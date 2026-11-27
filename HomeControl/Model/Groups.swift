@@ -19,7 +19,7 @@ enum Groups {
             HomeStore.shared.saveSnapshot()
             return id
         } catch {
-            logger.error("Saving group \(group.name) failed: \(error)")
+            HomeStore.shared.report(error, saving: "group \(group.name)")
             return nil
         }
     }
@@ -34,7 +34,7 @@ enum Groups {
             }
             HomeStore.shared.saveSnapshot()
         } catch {
-            logger.error("Deleting group \(id) failed: \(error)")
+            HomeStore.shared.report(error, saving: "the deletion of group \(id)")
         }
     }
 }

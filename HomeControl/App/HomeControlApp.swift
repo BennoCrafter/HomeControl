@@ -103,6 +103,7 @@ final class SceneDelegate: NSObject, UIWindowSceneDelegate {
                 try await syncEngine.acceptShare(metadata: metadata)
             } catch {
                 logger.error("Accepting the share failed: \(error)")
+                HomeStore.shared.joinFailure = error.localizedDescription
             }
         }
     }

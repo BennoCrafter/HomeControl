@@ -101,6 +101,16 @@ struct ContentView: View {
             if phase == .active { store.readAll() }
         }
         .sheet(item: $linkedItem) { DeviceDetailView(device: $0).environment(store) }
+        .alert("Couldn't Join the Home", isPresented: Binding(get: { store.joinFailure != nil }, set: { if !$0 { store.joinFailure = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("\(store.joinFailure ?? "") Check that you're signed in to iCloud, then open the invitation again.")
+        }
+        .alert("This Home Is View-Only", isPresented: Binding(get: { store.writeRefused }, set: { store.writeRefused = $0 })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("It was shared with you without permission to make changes, so your change wasn't saved. Ask whoever shared it to allow changes under Settings › People › Manage Sharing.")
+        }
         .sheet(isPresented: $showingSettings) {
             SettingsView()
                 .environment(store)

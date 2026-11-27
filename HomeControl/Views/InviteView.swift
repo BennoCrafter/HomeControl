@@ -11,6 +11,7 @@ struct InviteView: View {
     @State private var preparing = false
     @State private var error: String?
     @State private var homeKitOpen = false
+    @State private var shared = 0
 
     var body: some View {
         let share = store.homeShare()
@@ -44,11 +45,25 @@ struct InviteView: View {
                         Button {
                             Task { await shareHome() }
                         } label: {
-                            Label(share == nil ? "Invite with iCloud" : "Manage Sharing", systemImage: "icloud.and.arrow.up")
-                                .frame(maxWidth: .infinity)
+                            // Making the share can take a few seconds; say so instead of a dead button.
+                            if preparing {
+                                Label { Text("Preparing Invitation…") } icon: { ProgressView() }
+                                    .frame(maxWidth: .infinity)
+                            } else {
+                                Label(share == nil ? "Invite with iCloud" : "Manage Sharing", systemImage: "icloud.and.arrow.up")
+                                    .frame(maxWidth: .infinity)
+                            }
                         }
                         .buttonStyle(.borderedProminent)
                         .disabled(store.isDemo || preparing)
+                        if let share, !store.isDemo {
+                            let joined = share.participants.count { $0.role != .owner && $0.acceptanceStatus == .accepted }
+                            let waiting = share.participants.count { $0.role != .owner && $0.acceptanceStatus == .pending }
+                            Label(joined == 0 && waiting == 0 ? "Shared. Add people with Manage Sharing."
+                                    : "\(joined) joined, \(waiting) invited", systemImage: "checkmark.circle.fill")
+                                .font(.footnote)
+                                .foregroundStyle(.green)
+                        }
                         if store.isDemo {
                             Text("Pick your own home in Settings to invite people.")
                                 .font(.footnote)
@@ -92,7 +107,16 @@ struct InviteView: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done", systemImage: "checkmark") { dismiss() } }
             }
-            .sheet(item: $sharedRecord, onDismiss: store.loadPeople) { CloudSharingView(sharedRecord: $0) }
+            .sheet(item: $sharedRecord, onDismiss: store.loadPeople) { record in
+                // Read and write: everyone keeps their own dashboard here, which a view-only share would refuse.
+                CloudSharingView(sharedRecord: record, availablePermissions: [.allowPrivate, .allowReadWrite]) { result in
+                    switch result {
+                    case .success: shared += 1
+                    case let .failure(failure): error = failure.localizedDescription
+                    }
+                }
+            }
+            .sensoryFeedback(.success, trigger: shared)
             .alert("Couldn't Share", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
                 Button("OK", role: .cancel) {}
             } message: {

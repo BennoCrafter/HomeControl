@@ -27,6 +27,16 @@
         }
       }
     },
+    "%@ Check that you're signed in to iCloud, then open the invitation again." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ Prüfe, ob du bei iCloud angemeldet bist, und öffne die Einladung dann erneut."
+          }
+        }
+      }
+    },
     "%@ can't be reached. Check its power and network." : {
       "localizations" : {
         "de" : {
@@ -153,6 +163,22 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$lld items · %2$lld on"
+          }
+        }
+      }
+    },
+    "%lld joined, %lld invited" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld joined, %2$lld invited"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld beigetreten, %lld eingeladen"
           }
         }
       }
@@ -623,6 +649,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Import fehlgeschlagen"
+          }
+        }
+      }
+    },
+    "Couldn't Join the Home" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beitritt fehlgeschlagen"
           }
         }
       }
@@ -1177,6 +1213,16 @@
         }
       }
     },
+    "It was shared with you without permission to make changes, so your change wasn't saved. Ask whoever shared it to allow changes under Settings › People › Manage Sharing." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Es wurde ohne Berechtigung für Änderungen mit dir geteilt, deshalb wurde deine Änderung nicht gesichert. Bitte die Person, die es geteilt hat, unter Einstellungen › Personen › Freigabe verwalten Änderungen zu erlauben."
+          }
+        }
+      }
+    },
     "Items" : {
       "localizations" : {
         "de" : {
@@ -1707,6 +1753,16 @@
         }
       }
     },
+    "Preparing Invitation…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einladung wird vorbereitet …"
+          }
+        }
+      }
+    },
     "Remove" : {
       "localizations" : {
         "de" : {
@@ -1893,6 +1949,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Geteilt"
+          }
+        }
+      }
+    },
+    "Shared. Add people with Manage Sharing." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geteilt. Füge Personen über „Freigabe verwalten“ hinzu."
           }
         }
       }
@@ -2113,6 +2179,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Das Schloss ist blockiert. Prüfe die Tür und versuche es dann in der Home-App erneut."
+          }
+        }
+      }
+    },
+    "This Home Is View-Only" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieses Zuhause ist schreibgeschützt"
           }
         }
       }

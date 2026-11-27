@@ -214,6 +214,7 @@ struct StatusSheet: View {
     @State private var done = 0
     /// Fixed when the sheet opens: re-sorting as things switch would move the row from under the finger.
     @State private var order: [UUID] = []
+    @State private var openedItem: Device?
 
     var body: some View {
         let items = category.items(in: store.devices)
@@ -236,12 +237,13 @@ struct StatusSheet: View {
                     }
                 }
                 Section {
-                    ForEach(sorted) { MemberRow(device: $0) }
+                    ForEach(sorted) { MemberRow(device: $0) { openedItem = $0 } }
                 }
             }
             .formStyle(.grouped)
             .scrollContentBackground(.hidden)
             .containerBackground(.clear, for: .navigation)
+            .navigationDestination(item: $openedItem) { DeviceDetailView(device: $0, isPushed: true) }
             .navigationTitle(category.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

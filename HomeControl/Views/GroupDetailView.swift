@@ -7,6 +7,7 @@ struct GroupDetailView: View {
     @Environment(HomeStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     @State private var editing = false
+    @State private var openedItem: Device?
 
     var body: some View {
         if isPushed {
@@ -30,7 +31,7 @@ struct GroupDetailView: View {
                 }
                 if !others.isEmpty {
                     Section("Items") {
-                        ForEach(others) { MemberRow(device: $0) }
+                        ForEach(others) { MemberRow(device: $0) { openedItem = $0 } }
                     }
                 }
             }
@@ -56,6 +57,7 @@ struct GroupDetailView: View {
             .sheet(isPresented: $editing) {
                 GroupEditor(kind: .group, existing: group).environment(store)
             }
+            .navigationDestination(item: $openedItem) { DeviceDetailView(device: $0, isPushed: true) }
             .onChange(of: store.group(id: group.id) == nil) { _, gone in if gone { dismiss() } }
     }
 }
@@ -142,9 +144,10 @@ private struct RemoteView: View {
     }
 }
 
-/// One item in a list: tap the icon to switch it, a slider when it dims or moves.
+/// One item in a list: tap the icon to switch it, the name for its details, a slider when it dims or moves.
 struct MemberRow: View {
     let device: Device
+    let open: (Device) -> Void
     @Environment(HomeStore.self) private var store
     @Environment(\.itemPrefs) private var prefs
     @State private var confirming = false
@@ -176,13 +179,22 @@ struct MemberRow: View {
                 }
                 .buttonStyle(PressScale(scale: 0.8))
                 .disabled(!current.isReachable || !current.kind.isControllable)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(current.name).font(.headline)
-                    Text("\(current.room) · \(current.status)")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .contentTransition(.numericText())
+                // Plain style: in a Form row, each button then takes only its own taps.
+                Button { open(current) } label: {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(current.name).font(.headline)
+                            Text("\(current.room) · \(current.status)")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .contentTransition(.numericText())
+                        }
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.right").font(.caption.bold()).foregroundStyle(.tertiary)
+                    }
+                    .contentShape(.rect)
                 }
+                .buttonStyle(.plain)
             }
             if current.isReachable, current.hasValue, current.kind == .light || current.kind == .blinds {
                 let level = level(binding)

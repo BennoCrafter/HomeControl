@@ -518,6 +518,7 @@ extension HomeStore {
                 message = "\(device.name): \(error.localizedDescription)"
             }
             refresh(service)
+            saveItemDirectory()
         }
     }
 
@@ -685,6 +686,14 @@ extension HomeStore: HMAccessoryDelegate {
 
     nonisolated func accessoryDidUpdateName(_ accessory: HMAccessory) {
         MainActor.assumeIsolated { accessory.services.forEach(refresh) }
+    }
+
+    /// Someone else renamed it: without this the old name stays until the next reload.
+    nonisolated func accessory(_ accessory: HMAccessory, didUpdateNameFor service: HMService) {
+        MainActor.assumeIsolated {
+            refresh(service)
+            saveItemDirectory()
+        }
     }
 
     nonisolated func accessoryDidUpdateServices(_ accessory: HMAccessory) {

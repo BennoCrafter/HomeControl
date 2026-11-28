@@ -71,7 +71,7 @@ struct HomeBackground: View {
                     .scaledToFill()
                     .overlay(Color(.systemBackground).opacity(0.3))
             } else {
-                (BackgroundPreset(rawValue: appearance.background) ?? .aurora).view
+                (BackgroundPreset(rawValue: appearance.background) ?? .plain).view
             }
         }
         .ignoresSafeArea()

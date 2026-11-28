@@ -111,7 +111,7 @@ struct Appearance: Identifiable, Hashable, Sendable {
     @Column(primaryKey: true)
     var id: String // the home's id
     /// A `BackgroundPreset` raw value, or "photo".
-    var background = "aurora"
+    var background = "plain"
     var photo: Data?
     /// 0 is clear, 1 is solid.
     var tileOpacity = 0.6

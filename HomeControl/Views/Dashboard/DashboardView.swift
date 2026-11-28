@@ -29,6 +29,11 @@ struct DashboardView: View {
     @State private var confirmingReset = false
     /// The current grid width, for adding and removing outside of the layout pass.
     @State private var columns = 4
+    @State private var scrollPosition = ScrollPosition()
+    @State private var scrollY: CGFloat = 0
+    /// A card just added, to scroll to once it's on the canvas.
+    @State private var addedCard: UUID?
+    @State private var poppedCard: UUID?
 
     private struct ActiveDrag: Equatable {
         var id: UUID
@@ -37,6 +42,10 @@ struct DashboardView: View {
         var translation: CGSize
         /// Where it would land, snapped to the grid.
         var target: GridFrame
+        /// How far the dashboard scrolled under it since it was picked up.
+        var scrolled: CGFloat = 0
+        /// The finger's movement over the cards, not the screen.
+        var moved: CGSize { CGSize(width: translation.width, height: translation.height + scrolled) }
     }
 
     private var homeID: String { store.currentHomeID ?? "" }
@@ -103,19 +112,35 @@ struct DashboardView: View {
                 let cards = self.cards
                 let frames = preview(columns: columns, cards: cards)
                 let rows = (frames.values.map(\.maxY).max() ?? 0) + (isEditing ? 1 : 0)
-                ScrollView {
-                    // While arranging the dashboard itself: folders don't hold folders.
-                    if isEditing, folder == nil {
-                        TipView(FolderTip())
-                            .padding([.horizontal, .top], spacing)
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        // While arranging the dashboard itself: folders don't hold folders.
+                        if isEditing, folder == nil {
+                            TipView(FolderTip())
+                                .padding([.horizontal, .top], spacing)
+                        }
+                        canvas(cards: cards, frames: frames, columns: columns, step: step, spacing: spacing)
+                            .frame(width: geometry.size.width - spacing * 2,
+                                   height: max(0, CGFloat(rows) * step.height - spacing),
+                                   alignment: .topLeading)
+                            .padding(spacing)
                     }
-                    canvas(cards: cards, frames: frames, columns: columns, step: step, spacing: spacing)
-                        .frame(width: geometry.size.width - spacing * 2,
-                               height: max(0, CGFloat(rows) * step.height - spacing),
-                               alignment: .topLeading)
-                        .padding(spacing)
+                    .onChange(of: cards.map(\.id)) { _, ids in
+                        guard let id = addedCard, ids.contains(id) else { return }
+                        addedCard = nil
+                        withAnimation { proxy.scrollTo(id, anchor: .center) }
+                        Task {
+                            try? await Task.sleep(for: .milliseconds(350)) // once the scroll has landed
+                            withAnimation(.spring(duration: 0.2)) { poppedCard = id }
+                            try? await Task.sleep(for: .milliseconds(200))
+                            withAnimation(.spring(duration: 0.4, bounce: 0.5)) { poppedCard = nil }
+                        }
+                    }
                 }
+                .scrollPosition($scrollPosition)
+                .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: { scrollY = $1 }
                 .scrollDisabled(drag != nil)
+                .task(id: drag?.id) { await autoScroll(top: geometry.frame(in: .global).minY, columns: columns, step: step) }
                 .overlay {
                     if cards.isEmpty, !store.devices.isEmpty {
                         ContentUnavailableView {
@@ -221,6 +246,8 @@ struct DashboardView: View {
                     let area = liveRect(card: card, target: frame, step: step, spacing: spacing)
                     cardView(card)
                         .frame(width: area.width, height: area.height)
+                        .id(card.id) // before `position`, which makes it as big as the canvas
+                        .scaleEffect(poppedCard == card.id ? 1.1 : 1)
                         .modifier(Jiggle(isOn: isEditing && drag?.id != card.id, seed: Int(card.id.uuid.0)))
                         .overlay(alignment: .topLeading) { if isEditing { removeButton(card) } }
                         .overlay(alignment: .bottomTrailing) { if isEditing { resizeGrip } }
@@ -250,12 +277,12 @@ struct DashboardView: View {
         let start = rect(drag.start, step: step, spacing: spacing)
         switch drag.handle {
         case .move:
-            return start.offsetBy(dx: drag.translation.width, dy: drag.translation.height)
+            return start.offsetBy(dx: drag.moved.width, dy: drag.moved.height)
         case .resize:
             let min = card.kind.minSize
             return CGRect(x: start.minX, y: start.minY,
-                          width: max(CGFloat(min.width) * step.width - spacing, start.width + drag.translation.width),
-                          height: max(CGFloat(min.height) * step.height - spacing, start.height + drag.translation.height))
+                          width: max(CGFloat(min.width) * step.width - spacing, start.width + drag.moved.width),
+                          height: max(CGFloat(min.height) * step.height - spacing, start.height + drag.moved.height))
         }
     }
 
@@ -270,7 +297,7 @@ struct DashboardView: View {
     }
 
     private func desired(for drag: ActiveDrag, columns: Int, step: CGSize) -> GridFrame {
-        let delta = DashboardEngine.cellDelta(for: drag.translation, step: step)
+        let delta = DashboardEngine.cellDelta(for: drag.moved, step: step)
         var frame = drag.start
         switch drag.handle {
         case .move:
@@ -290,7 +317,7 @@ struct DashboardView: View {
             return hypot(frame.maxX - location.x, frame.maxY - location.y) < 44 ? .resize : .move
         } onChanged: { handle, translation in
             let start = drag?.start ?? committed(columns: columns)[card.id] ?? card.frame
-            var new = ActiveDrag(id: card.id, handle: handle, start: start, translation: translation, target: start)
+            var new = ActiveDrag(id: card.id, handle: handle, start: start, translation: translation, target: start, scrolled: drag?.scrolled ?? 0)
             new.target = desired(for: new, columns: columns, step: step)
             drag = new
         } onEnded: { _, _ in
@@ -300,6 +327,22 @@ struct DashboardView: View {
             withAnimation(.spring(duration: 0.35, bounce: 0.3)) { drag = nil }
         } onCancelled: {
             withAnimation(.spring(duration: 0.35, bounce: 0.3)) { drag = nil }
+        }
+    }
+
+    /// A card held against the top edge scrolls the dashboard up under it, faster the further it's pushed.
+    private func autoScroll(top: CGFloat, columns: Int, step: CGSize) async {
+        guard drag?.handle == .move else { return }
+        while let current = drag, !Task.isCancelled {
+            let push = top + 40 - (cardFrames.frames[current.id]?.minY ?? .infinity)
+            if push > 0, scrollY > 0 {
+                let distance = min(scrollY, min(push, 60) / 4)
+                scrollPosition.scrollTo(y: scrollY - distance)
+                scrollY -= distance // ahead of the geometry callback, so the next frame doesn't scroll from a stale offset
+                drag?.scrolled -= distance
+                if let drag { self.drag?.target = desired(for: drag, columns: columns, step: step) }
+            }
+            try? await Task.sleep(for: .milliseconds(16))
         }
     }
 
@@ -538,11 +581,13 @@ struct DashboardView: View {
         let size = kind.defaultSize(columns: columns)
         let spot = DashboardEngine.freeSpot(width: size.width, height: size.height, in: Array(committed(columns: columns).values), columns: columns)
         @Dependency(\.defaultDatabase) var database
+        let id = UUID()
+        addedCard = id
         withAnimation(.spring(duration: 0.4, bounce: 0.35)) {
             do {
                 try database.write { db in
                     try DashboardCard.insert {
-                        DashboardCard.Draft(homeID: homeID, kind: kind, ref: ref, x: spot.x, y: spot.y, width: spot.width, height: spot.height,
+                        DashboardCard.Draft(id: id, homeID: homeID, kind: kind, ref: ref, x: spot.x, y: spot.y, width: spot.width, height: spot.height,
                                             columns: columns, memberID: profiles.selected, folderID: folder?.id)
                     }.execute(db)
                 }

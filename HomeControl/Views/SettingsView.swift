@@ -42,6 +42,7 @@ struct SettingsView: View {
                 }
                 if let homeID = store.currentHomeID {
                     AppearanceSection(homeID: homeID)
+                    DashboardsSection()
                 }
                 if !store.isDemo, store.currentHomeID != nil {
                     Section {

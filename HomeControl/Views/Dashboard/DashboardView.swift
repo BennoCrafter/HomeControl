@@ -57,13 +57,11 @@ struct DashboardView: View {
     }
 
     @State private var profiles = Profiles(homeID: "")
-    @State private var importing = false
-    @State private var importError: String?
+    @FetchAll private var dashboardRows: [Dashboard]
 
-    /// Every card of the chosen person in this home, both screen sizes: what a shared file holds.
-    private var shareableCards: [DashboardCard] {
-        let refs = validRefs
-        return allCards.filter { $0.homeID == homeID && $0.memberID == profiles.selected && isValid($0, refs) }
+    /// Everyone's own and the added ones, as Settings arranges them.
+    private var dashboards: [Profiles.Profile] {
+        Profiles.list(people: store.people, dashboards: dashboardRows.filter { $0.homeID == homeID })
     }
 
     /// Cards of items or rooms that left the home are skipped, not deleted: they may come back.
@@ -142,7 +140,15 @@ struct DashboardView: View {
                 .scrollDisabled(drag != nil)
                 .task(id: drag?.id) { await autoScroll(top: geometry.frame(in: .global).minY, columns: columns, step: step) }
                 .overlay {
-                    if cards.isEmpty, !store.devices.isEmpty {
+                    if profiles.all.isEmpty, !store.devices.isEmpty {
+                        ContentUnavailableView {
+                            Label("No Dashboards", systemImage: "square.grid.2x2")
+                        } description: {
+                            Text("Every dashboard of this home was deleted.")
+                        } actions: {
+                            NewDashboardButton().buttonStyle(.borderedProminent)
+                        }
+                    } else if cards.isEmpty, !store.devices.isEmpty {
                         ContentUnavailableView {
                             Label("Your Dashboard", systemImage: "square.grid.2x2")
                         } description: {
@@ -155,9 +161,9 @@ struct DashboardView: View {
                     }
                 }
                 .toolbar { toolbar(columns: columns) }
-                .task(id: "\(homeID)\(columns)\(profiles.selected)\(store.people)") {
+                .task(id: "\(homeID)\(columns)\(profiles.selected)\(dashboards)") {
                     self.columns = columns
-                    if profiles.homeID != homeID || profiles.all != store.people { profiles = Profiles(homeID: homeID, people: store.people) }
+                    if profiles.homeID != homeID || profiles.all != dashboards { profiles = Profiles(homeID: homeID, all: dashboards) }
                     seedIfNeeded(columns: columns)
                 }
                 #if DEBUG
@@ -483,20 +489,8 @@ struct DashboardView: View {
                     withAnimation(.spring(duration: 0.45, bounce: 0.25)) { profiles.selected = id }
                 })) {
                     ForEach(profiles.all) { profile in
-                        Label(profile.name, systemImage: profile.id == store.meID ? "person.crop.circle.fill" : "person.crop.circle").tag(profile.id)
-                    }
-                }
-                Section {
-                    ShareLink(item: DashboardFile(cards: shareableCards, devices: store.devices, groups: store.allGroups),
-                              preview: SharePreview("\(profiles.name(of: profiles.selected))'s Dashboard", image: Image(systemName: "square.grid.2x2")))
-                    Button("Import Dashboard…", systemImage: "square.and.arrow.down") { importing = true }
-                    let others = profiles.all.filter { $0.id != profiles.selected }
-                    if !others.isEmpty {
-                        Menu("Copy From", systemImage: "doc.on.doc") {
-                            ForEach(others) { profile in
-                                Button(profile.name) { copy(from: profile.id) }
-                            }
-                        }
+                        Label(profile.name, systemImage: profile.id == store.meID ? "person.crop.circle.fill"
+                              : store.people.contains { $0.id == profile.id } ? "person.crop.circle" : "square.grid.2x2").tag(profile.id)
                     }
                 }
             }
@@ -504,31 +498,6 @@ struct DashboardView: View {
             Label("Menu", systemImage: "gearshape")
         }
         .simultaneousGesture(LongPressGesture(minimumDuration: 0.5).onEnded { _ in startEditing() })
-        .fileImporter(isPresented: $importing, allowedContentTypes: [.json]) { result in
-            do {
-                let url = try result.get()
-                let access = url.startAccessingSecurityScopedResource()
-                defer { if access { url.stopAccessingSecurityScopedResource() } }
-                let file = try JSONDecoder().decode(DashboardFile.self, from: Data(contentsOf: url))
-                withAnimation(.spring(duration: 0.45, bounce: 0.25)) {
-                    try? file.install(homeID: homeID, memberID: profiles.selected, devices: store.devices)
-                }
-            } catch {
-                importError = error.localizedDescription
-            }
-        }
-        .alert("Couldn't Import", isPresented: Binding(get: { importError != nil }, set: { if !$0 { importError = nil } })) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(importError ?? "")
-        }
-    }
-
-    private func copy(from member: String) {
-        let source = allCards.filter { $0.homeID == homeID && $0.memberID == member }
-        withAnimation(.spring(duration: 0.45, bounce: 0.25)) {
-            try? DashboardFile(cards: source, devices: store.devices, groups: store.allGroups).install(homeID: homeID, memberID: profiles.selected, devices: store.devices)
-        }
     }
 
     private func addMenu(columns: Int) -> some View {
@@ -645,13 +614,14 @@ struct DashboardView: View {
     private func seedIfNeeded(columns: Int) {
         let key = seededKey
         let member = profiles.selected
-        guard folder == nil, !homeID.isEmpty, !store.devices.isEmpty, !UserDefaults.standard.bool(forKey: key),
+        guard folder == nil, !homeID.isEmpty, !profiles.all.isEmpty, !store.devices.isEmpty, !UserDefaults.standard.bool(forKey: key),
               !allCards.contains(where: { $0.homeID == homeID && $0.columns == columns && $0.memberID == member }) else { return }
         UserDefaults.standard.set(true, forKey: key)
         add(.status, ref: "", columns: columns)
         for room in store.rooms {
             add(.room, ref: room, columns: columns)
         }
+        addedCard = nil // a first layout isn't scrolled to
     }
 }
 

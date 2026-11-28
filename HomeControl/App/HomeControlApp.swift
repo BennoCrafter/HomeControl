@@ -19,7 +19,7 @@ struct HomeControlApp: App {
                 // The whole setup syncs through iCloud and can be shared with family; the widget snapshot stays local.
                 $0.defaultSyncEngine = try SyncEngine(
                     for: $0.defaultDatabase,
-                    tables: Home.self, RoomPref.self, ItemPref.self, DashboardCard.self, DeviceGroup.self, Appearance.self, HomeItem.self, ItemEvent.self,
+                    tables: Home.self, RoomPref.self, ItemPref.self, DashboardCard.self, DeviceGroup.self, Appearance.self, HomeItem.self, ItemEvent.self, Dashboard.self,
                     containerIdentifier: Schema.iCloudContainer
                 )
             }

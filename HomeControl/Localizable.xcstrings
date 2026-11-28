@@ -169,16 +169,16 @@
     },
     "%lld joined, %lld invited" : {
       "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld joined, %2$lld invited"
-          }
-        },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld beigetreten, %lld eingeladen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld joined, %2$lld invited"
           }
         }
       }
@@ -703,12 +703,42 @@
         }
       }
     },
+    "Dashboards" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboards"
+          }
+        }
+      }
+    },
     "Delete Collection" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sammlung löschen"
+          }
+        }
+      }
+    },
+    "Delete Dashboard" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard löschen"
+          }
+        }
+      }
+    },
+    "Delete “%@”?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "„%@“ löschen?"
           }
         }
       }
@@ -829,6 +859,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Foto bearbeiten"
+          }
+        }
+      }
+    },
+    "Every dashboard of this home was deleted." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle Dashboards dieses Zuhauses wurden gelöscht."
+          }
+        }
+      }
+    },
+    "Everyone in %@ can switch to these and edit them." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle in %@ können zu diesen wechseln und sie bearbeiten."
+          }
+        }
+      }
+    },
+    "Everyone in the home sees the new name." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle im Zuhause sehen den neuen Namen."
           }
         }
       }
@@ -1213,6 +1273,16 @@
         }
       }
     },
+    "It starts with the usual layout. Everyone in the home can see and edit it." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Es beginnt mit der üblichen Anordnung. Alle im Zuhause können es sehen und bearbeiten."
+          }
+        }
+      }
+    },
     "It was shared with you without permission to make changes, so your change wasn't saved. Ask whoever shared it to allow changes under Settings › People › Manage Sharing." : {
       "localizations" : {
         "de" : {
@@ -1223,12 +1293,32 @@
         }
       }
     },
+    "It's removed with its cards for everyone in the home. This can't be undone." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Es wird mit seinen Karten für alle im Zuhause entfernt. Das lässt sich nicht widerrufen."
+          }
+        }
+      }
+    },
     "Items" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Objekte"
+          }
+        }
+      }
+    },
+    "Its cards are replaced for everyone. This can't be undone." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seine Karten werden für alle ersetzt. Das lässt sich nicht widerrufen."
           }
         }
       }
@@ -1453,6 +1543,26 @@
         }
       }
     },
+    "New Dashboard" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neues Dashboard"
+          }
+        }
+      }
+    },
+    "New Dashboard…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neues Dashboard …"
+          }
+        }
+      }
+    },
     "New Folder" : {
       "localizations" : {
         "de" : {
@@ -1469,6 +1579,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Neuer Ordner …"
+          }
+        }
+      }
+    },
+    "No Dashboards" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine Dashboards"
           }
         }
       }
@@ -1783,6 +1903,16 @@
         }
       }
     },
+    "Rename Dashboard" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard umbenennen"
+          }
+        }
+      }
+    },
     "Rename Home" : {
       "localizations" : {
         "de" : {
@@ -1799,6 +1929,32 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Umbenennen …"
+          }
+        }
+      }
+    },
+    "Replace" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ersetzen"
+          }
+        }
+      }
+    },
+    "Replace “%@” with “%@”?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Replace “%1$@” with “%2$@”?"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "„%1$@“ durch „%2$@“ ersetzen?"
           }
         }
       }

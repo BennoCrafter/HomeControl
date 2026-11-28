@@ -130,6 +130,20 @@ struct HomeItem: Identifiable, Hashable, Sendable {
     var kind = ""
 }
 
+/// A dashboard's name, and whether it's gone. A person's own needs a row only once renamed or deleted;
+/// an added one, like "Shared", always has one.
+@Table("dashboards")
+struct Dashboard: Identifiable, Hashable, Sendable {
+    /// What its cards carry as `memberID`: the person's iCloud user, or a new UUID for an added one.
+    let id: String
+    var homeID: String
+    /// Empty: the person's name.
+    var name = ""
+    var isPerson = false
+    /// A person's dashboard, deleted for good: it doesn't come back when they open the app.
+    var isDeleted = false
+}
+
 /// The latest state of every item, for the widgets, which can't reach HomeKit themselves.
 @Table("snapshots")
 struct Snapshot: Identifiable, Hashable, Sendable {
@@ -296,6 +310,19 @@ enum Schema {
                 """
             ).execute(db)
             try #sql(#"CREATE INDEX "events_deviceID_date" ON "events"("deviceID", "date")"#).execute(db)
+        }
+        migrator.registerMigration("Add dashboards") { db in
+            try #sql(
+                """
+                CREATE TABLE "dashboards" (
+                  "id" TEXT PRIMARY KEY NOT NULL ON CONFLICT REPLACE,
+                  "homeID" TEXT NOT NULL REFERENCES "homes"("id") ON DELETE CASCADE,
+                  "name" TEXT NOT NULL DEFAULT '',
+                  "isPerson" INTEGER NOT NULL DEFAULT 0,
+                  "isDeleted" INTEGER NOT NULL DEFAULT 0
+                ) STRICT
+                """
+            ).execute(db)
         }
         return migrator
     }
